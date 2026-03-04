@@ -66,4 +66,34 @@ class User extends Authenticatable
     {
         return $this->role === self::ROLE_STUDENT;
     }
+
+    public function taughtCourses()
+    {
+        return $this->hasMany(Course::class, 'instructor_id');
+    }
+
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
+    public function lessonProgress()
+    {
+        return $this->hasMany(LessonProgress::class);
+    }
+
+    public function assignmentSubmissions()
+    {
+        return $this->hasMany(AssignmentSubmission::class);
+    }
+
+    public function quizAttempts()
+    {
+        return $this->hasMany(QuizAttempt::class);
+    }
+
+    public function uploadedResources()
+    {
+        return $this->hasMany(Resource::class, 'uploaded_by');
+    }
 }
