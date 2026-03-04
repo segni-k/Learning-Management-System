@@ -95,4 +95,57 @@ class ResourceController extends Controller
             'url' => Storage::disk('public')->url($path),
         ], 201);
     }
+
+    public function download(Request $request, Resource $resource)
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            abort(403, 'Authentication required.');
+        }
+
+        if ($user->isAdmin()) {
+            return $this->downloadResourceFile($resource);
+        }
+
+        $courseId = $resource->course_id;
+        if (! $courseId && $resource->lesson) {
+            $courseId = $resource->lesson?->module?->course_id;
+        }
+
+        if ($user->isInstructor() && $courseId) {
+            $isOwner = $resource->course?->instructor_id === $user->id
+                || $resource->lesson?->module?->course?->instructor_id === $user->id;
+
+            if ($isOwner) {
+                return $this->downloadResourceFile($resource);
+            }
+        }
+
+        if ($user->isStudent()) {
+            if (! $courseId) {
+                abort(403, 'You do not have access to this resource.');
+            }
+
+            $isEnrolled = Enrollment::query()
+                ->where('course_id', $courseId)
+                ->where('user_id', $user->id)
+                ->exists();
+
+            if ($isEnrolled) {
+                return $this->downloadResourceFile($resource);
+            }
+        }
+
+        abort(403, 'You do not have access to this resource.');
+    }
+
+    private function downloadResourceFile(Resource $resource)
+    {
+        if (! $resource->path) {
+            abort(404, 'File not found.');
+        }
+
+        return Storage::disk('public')->download($resource->path);
+    }
 }

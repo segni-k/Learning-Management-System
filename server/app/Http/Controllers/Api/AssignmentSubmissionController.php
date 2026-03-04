@@ -69,4 +69,26 @@ class AssignmentSubmissionController extends Controller
 
         return response()->json(['data' => $submissions]);
     }
+
+    public function download(Request $request, AssignmentSubmission $submission)
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            abort(403, 'Authentication required.');
+        }
+
+        $isOwner = $submission->user_id === $user->id;
+        $isInstructor = $submission->assignment->course->instructor_id === $user->id;
+
+        if (! $user->isAdmin() && ! $isOwner && ! $isInstructor) {
+            abort(403, 'You do not have permission to download this submission.');
+        }
+
+        if (! $submission->file_path) {
+            abort(404, 'File not found.');
+        }
+
+        return Storage::disk('public')->download($submission->file_path);
+    }
 }

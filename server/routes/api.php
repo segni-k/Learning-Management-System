@@ -49,6 +49,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/assignments/{assignment}/submissions', [AssignmentSubmissionController::class, 'index']);
         Route::post('/assignments/{assignment}/submissions', [AssignmentSubmissionController::class, 'store']);
         Route::patch('/submissions/{submission}', [AssignmentSubmissionController::class, 'update']);
+        Route::get('/submissions/{submission}/download', [AssignmentSubmissionController::class, 'download']);
 
         Route::post('/courses/{course}/quizzes', [QuizController::class, 'store']);
         Route::patch('/quizzes/{quiz}', [QuizController::class, 'update']);
@@ -66,6 +67,7 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/resources', [ResourceController::class, 'index']);
         Route::post('/resources', [ResourceController::class, 'store']);
+        Route::get('/resources/{resource}/download', [ResourceController::class, 'download']);
 
         Route::get('/admin/analytics/overview', [AdminAnalyticsController::class, 'overview']);
         Route::get('/admin/analytics/courses', [AdminAnalyticsController::class, 'courses']);
