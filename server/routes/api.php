@@ -14,6 +14,8 @@ use App\Http\Controllers\Api\QuizQuestionController;
 use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\ResourceController;
 use App\Http\Controllers\Api\AdminAnalyticsController;
+use App\Http\Controllers\Api\InstructorAnalyticsController;
+use App\Http\Controllers\Api\StudentDashboardController;
 
 Route::prefix('v1')->group(function () {
     Route::middleware('web')->group(function () {
@@ -71,5 +73,10 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/admin/analytics/overview', [AdminAnalyticsController::class, 'overview']);
         Route::get('/admin/analytics/courses', [AdminAnalyticsController::class, 'courses']);
+
+        Route::get('/instructor/analytics/overview', [InstructorAnalyticsController::class, 'overview']);
+        Route::get('/instructor/analytics/courses', [InstructorAnalyticsController::class, 'courses']);
+
+        Route::get('/student/dashboard/overview', [StudentDashboardController::class, 'overview']);
     });
 });
