@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\AssignmentSubmissionController;
 use App\Http\Controllers\Api\QuizAttemptController;
 use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\QuizQuestionController;
+use App\Http\Controllers\Api\ProgressController;
 
 Route::prefix('v1')->group(function () {
     Route::middleware('web')->group(function () {
@@ -56,5 +57,9 @@ Route::prefix('v1')->group(function () {
         Route::patch('/quizzes/{quiz}/questions/reorder', [QuizQuestionController::class, 'reorder']);
         Route::get('/quizzes/{quiz}/attempts', [QuizAttemptController::class, 'index']);
         Route::post('/quizzes/{quiz}/attempts', [QuizAttemptController::class, 'store']);
+
+        Route::post('/progress', [ProgressController::class, 'upsert']);
+        Route::get('/courses/{course}/progress', [ProgressController::class, 'courseSummary']);
+        Route::get('/courses/{course}/progress/roster', [ProgressController::class, 'courseRosterSummary']);
     });
 });
