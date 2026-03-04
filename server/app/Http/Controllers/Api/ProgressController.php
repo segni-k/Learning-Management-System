@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreLessonProgressRequest;
 use App\Models\Course;
+use App\Models\Enrollment;
 use App\Models\LessonProgress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -82,5 +83,59 @@ class ProgressController extends Controller
             ->get();
 
         return response()->json(['data' => $summary]);
+    }
+
+    public function resumeLesson(Request $request)
+    {
+        $user = $request->user();
+
+        if (! $user?->isStudent() && ! $user?->isAdmin()) {
+            abort(403, 'Students only.');
+        }
+
+        $courseId = $request->query('course_id');
+
+        $progressQuery = LessonProgress::query()
+            ->with(['lesson.module.course'])
+            ->where('user_id', $user->id)
+            ->where('status', 'in_progress')
+            ->orderByDesc('updated_at');
+
+        if ($courseId) {
+            $progressQuery->whereHas('lesson.module.course', function ($builder) use ($courseId) {
+                $builder->where('courses.id', $courseId);
+            });
+        }
+
+        $progress = $progressQuery->first();
+
+        if (! $progress) {
+            return response()->json(['data' => null]);
+        }
+
+        $course = $progress->lesson?->module?->course;
+
+        if (! $user->isAdmin()) {
+            $isEnrolled = $course
+                ? Enrollment::query()
+                    ->where('course_id', $course->id)
+                    ->where('user_id', $user->id)
+                    ->exists()
+                : false;
+
+            if (! $isEnrolled) {
+                abort(403, 'You are not enrolled in this course.');
+            }
+        }
+
+        return response()->json([
+            'data' => [
+                'lesson' => $progress->lesson?->only(['id', 'title', 'module_id']),
+                'module' => $progress->lesson?->module?->only(['id', 'title', 'course_id']),
+                'course' => $course?->only(['id', 'title']),
+                'progress_percent' => $progress->progress_percent,
+                'updated_at' => $progress->updated_at,
+            ],
+        ]);
     }
 }

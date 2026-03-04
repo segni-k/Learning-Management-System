@@ -16,6 +16,10 @@ use App\Http\Controllers\Api\ResourceController;
 use App\Http\Controllers\Api\AdminAnalyticsController;
 use App\Http\Controllers\Api\InstructorAnalyticsController;
 use App\Http\Controllers\Api\StudentDashboardController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\StudentCourseworkController;
+use App\Http\Controllers\Api\StudentActivityController;
+use App\Http\Controllers\Api\StudentCourseDashboardController;
 
 Route::prefix('v1')->group(function () {
     Route::middleware('web')->group(function () {
@@ -66,6 +70,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/progress', [ProgressController::class, 'upsert']);
         Route::get('/courses/{course}/progress', [ProgressController::class, 'courseSummary']);
         Route::get('/courses/{course}/progress/roster', [ProgressController::class, 'courseRosterSummary']);
+        Route::get('/student/resume-lesson', [ProgressController::class, 'resumeLesson']);
 
         Route::get('/resources', [ResourceController::class, 'index']);
         Route::post('/resources', [ResourceController::class, 'store']);
@@ -78,5 +83,9 @@ Route::prefix('v1')->group(function () {
         Route::get('/instructor/analytics/courses', [InstructorAnalyticsController::class, 'courses']);
 
         Route::get('/student/dashboard/overview', [StudentDashboardController::class, 'overview']);
+        Route::get('/student/notifications', [NotificationController::class, 'index']);
+        Route::get('/student/coursework', [StudentCourseworkController::class, 'index']);
+        Route::get('/student/activity', [StudentActivityController::class, 'index']);
+        Route::get('/student/courses/{course}/dashboard', [StudentCourseDashboardController::class, 'show']);
     });
 });

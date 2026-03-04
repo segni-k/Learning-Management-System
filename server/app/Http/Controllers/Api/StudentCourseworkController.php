@@ -1,0 +1,204 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Assignment;
+use App\Models\AssignmentSubmission;
+use App\Models\Enrollment;
+use App\Models\Quiz;
+use App\Models\QuizAttempt;
+use Illuminate\Http\Request;
+
+class StudentCourseworkController extends Controller
+{
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        if (! $user?->isStudent() && ! $user?->isAdmin()) {
+            abort(403, 'Students only.');
+        }
+
+        $courseIds = Enrollment::query()
+            ->where('user_id', $user->id)
+            ->pluck('course_id');
+
+        $courseId = $request->query('course_id');
+        if ($courseId) {
+            $courseIds = $courseIds->filter(fn ($id) => (int) $id === (int) $courseId);
+        }
+
+        $assignmentsPage = (int) $request->query('assignments_page', 1);
+        $assignmentsPerPage = min((int) $request->query('assignments_per_page', 20), 100);
+        $assignmentsStatus = $request->query('assignments_status');
+        $dueFrom = $request->query('due_from');
+        $dueTo = $request->query('due_to');
+
+        $assignmentsQuery = Assignment::query()
+            ->with(['course', 'lesson'])
+            ->whereIn('course_id', $courseIds)
+            ->where('is_published', true)
+            ->leftJoin('assignment_submissions as submissions', function ($join) use ($user) {
+                $join->on('assignments.id', '=', 'submissions.assignment_id')
+                    ->where('submissions.user_id', $user->id);
+            })
+            ->select([
+                'assignments.*',
+                'submissions.id as submission_id',
+                'submissions.submitted_at as submission_submitted_at',
+                'submissions.graded_at as submission_graded_at',
+                'submissions.score as submission_score',
+            ]);
+
+        if ($courseId) {
+            $assignmentsQuery->where('assignments.course_id', $courseId);
+        }
+
+        if ($dueFrom) {
+            $assignmentsQuery->where('assignments.due_at', '>=', $dueFrom);
+        }
+
+        if ($dueTo) {
+            $assignmentsQuery->where('assignments.due_at', '<=', $dueTo);
+        }
+
+        if ($assignmentsStatus === 'graded') {
+            $assignmentsQuery->whereNotNull('submissions.graded_at');
+        } elseif ($assignmentsStatus === 'submitted') {
+            $assignmentsQuery->whereNotNull('submissions.id')
+                ->whereNull('submissions.graded_at');
+        } elseif ($assignmentsStatus === 'pending') {
+            $assignmentsQuery->whereNull('submissions.id');
+        } elseif ($assignmentsStatus === 'overdue') {
+            $assignmentsQuery->whereNull('submissions.id')
+                ->whereNotNull('assignments.due_at')
+                ->where('assignments.due_at', '<', now());
+        }
+
+        $assignmentsPageData = $assignmentsQuery
+            ->orderBy('assignments.due_at')
+            ->paginate(
+                $assignmentsPerPage,
+                ['*'],
+                'assignments_page',
+                $assignmentsPage
+            );
+
+        $assignmentsData = $assignmentsPageData->getCollection()->map(function (Assignment $assignment) {
+            $submittedAt = $assignment->submission_submitted_at;
+            $gradedAt = $assignment->submission_graded_at;
+            $hasSubmission = ! is_null($assignment->submission_id);
+
+            return [
+                'id' => $assignment->id,
+                'title' => $assignment->title,
+                'course' => $assignment->course?->only(['id', 'title']),
+                'lesson' => $assignment->lesson?->only(['id', 'title']),
+                'due_at' => $assignment->due_at,
+                'is_published' => $assignment->is_published,
+                'status' => $hasSubmission ? ($gradedAt ? 'graded' : 'submitted') : 'pending',
+                'submitted_at' => $submittedAt,
+                'graded_at' => $gradedAt,
+                'score' => $assignment->submission_score,
+            ];
+        });
+
+        $quizzesPage = (int) $request->query('quizzes_page', 1);
+        $quizzesPerPage = min((int) $request->query('quizzes_per_page', 20), 100);
+        $quizStatus = $request->query('quiz_status');
+
+        $quizzesQuery = Quiz::query()
+            ->with(['course', 'lesson'])
+            ->whereIn('course_id', $courseIds)
+            ->where('is_published', true)
+            ->select('quizzes.*')
+            ->selectSub(
+                QuizAttempt::query()
+                    ->selectRaw('count(*)')
+                    ->whereColumn('quiz_attempts.quiz_id', 'quizzes.id')
+                    ->where('quiz_attempts.user_id', $user->id),
+                'attempts_used'
+            )
+            ->selectSub(
+                QuizAttempt::query()
+                    ->select('score')
+                    ->whereColumn('quiz_attempts.quiz_id', 'quizzes.id')
+                    ->where('quiz_attempts.user_id', $user->id)
+                    ->orderByDesc('completed_at')
+                    ->limit(1),
+                'last_score'
+            )
+            ->selectSub(
+                QuizAttempt::query()
+                    ->select('completed_at')
+                    ->whereColumn('quiz_attempts.quiz_id', 'quizzes.id')
+                    ->where('quiz_attempts.user_id', $user->id)
+                    ->orderByDesc('completed_at')
+                    ->limit(1),
+                'last_attempted_at'
+            );
+
+        if ($courseId) {
+            $quizzesQuery->where('quizzes.course_id', $courseId);
+        }
+
+        if ($quizStatus === 'attempted') {
+            $quizzesQuery->whereHas('attempts', function ($builder) use ($user) {
+                $builder->where('user_id', $user->id);
+            });
+        } elseif ($quizStatus === 'not_started') {
+            $quizzesQuery->whereDoesntHave('attempts', function ($builder) use ($user) {
+                $builder->where('user_id', $user->id);
+            });
+        }
+
+        $quizzesPageData = $quizzesQuery
+            ->latest()
+            ->paginate(
+                $quizzesPerPage,
+                ['*'],
+                'quizzes_page',
+                $quizzesPage
+            );
+
+        $quizzesData = $quizzesPageData->getCollection()->map(function (Quiz $quiz) {
+            $attemptCount = (int) ($quiz->attempts_used ?? 0);
+            $remainingAttempts = $quiz->max_attempts ? max($quiz->max_attempts - $attemptCount, 0) : null;
+
+            return [
+                'id' => $quiz->id,
+                'title' => $quiz->title,
+                'course' => $quiz->course?->only(['id', 'title']),
+                'lesson' => $quiz->lesson?->only(['id', 'title']),
+                'max_attempts' => $quiz->max_attempts,
+                'attempts_used' => $attemptCount,
+                'attempts_remaining' => $remainingAttempts,
+                'last_score' => $quiz->last_score,
+                'last_attempted_at' => $quiz->last_attempted_at,
+                'status' => $attemptCount > 0 ? 'attempted' : 'not_started',
+            ];
+        });
+
+        return response()->json([
+            'data' => [
+                'assignments' => $assignmentsData,
+                'quizzes' => $quizzesData,
+            ],
+            'meta' => [
+                'assignments' => [
+                    'current_page' => $assignmentsPageData->currentPage(),
+                    'per_page' => $assignmentsPageData->perPage(),
+                    'total' => $assignmentsPageData->total(),
+                    'last_page' => $assignmentsPageData->lastPage(),
+                ],
+                'quizzes' => [
+                    'current_page' => $quizzesPageData->currentPage(),
+                    'per_page' => $quizzesPageData->perPage(),
+                    'total' => $quizzesPageData->total(),
+                    'last_page' => $quizzesPageData->lastPage(),
+                ],
+            ],
+        ]);
+    }
+}
