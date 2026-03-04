@@ -12,6 +12,8 @@ use App\Http\Controllers\Api\QuizAttemptController;
 use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\QuizQuestionController;
 use App\Http\Controllers\Api\ProgressController;
+use App\Http\Controllers\Api\ResourceController;
+use App\Http\Controllers\Api\AdminAnalyticsController;
 
 Route::prefix('v1')->group(function () {
     Route::middleware('web')->group(function () {
@@ -61,5 +63,11 @@ Route::prefix('v1')->group(function () {
         Route::post('/progress', [ProgressController::class, 'upsert']);
         Route::get('/courses/{course}/progress', [ProgressController::class, 'courseSummary']);
         Route::get('/courses/{course}/progress/roster', [ProgressController::class, 'courseRosterSummary']);
+
+        Route::get('/resources', [ResourceController::class, 'index']);
+        Route::post('/resources', [ResourceController::class, 'store']);
+
+        Route::get('/admin/analytics/overview', [AdminAnalyticsController::class, 'overview']);
+        Route::get('/admin/analytics/courses', [AdminAnalyticsController::class, 'courses']);
     });
 });

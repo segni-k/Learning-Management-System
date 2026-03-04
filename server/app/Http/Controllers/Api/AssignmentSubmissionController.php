@@ -8,6 +8,7 @@ use App\Http\Requests\Api\UpdateAssignmentSubmissionRequest;
 use App\Models\Assignment;
 use App\Models\AssignmentSubmission;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class AssignmentSubmissionController extends Controller
 {
@@ -20,6 +21,11 @@ class AssignmentSubmissionController extends Controller
         }
 
         $data = $request->validated();
+
+        if ($request->hasFile('file')) {
+            $data['file_path'] = $request->file('file')->store('assignment-submissions', 'public');
+        }
+
         $data['user_id'] = $user->id;
         $data['submitted_at'] = now();
 

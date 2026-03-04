@@ -16,6 +16,7 @@ class StoreAssignmentSubmissionRequest extends FormRequest
         return [
             'content' => ['nullable', 'string'],
             'file_path' => ['nullable', 'string', 'max:255'],
+            'file' => ['nullable', 'file', 'max:20480'],
         ];
     }
 }
