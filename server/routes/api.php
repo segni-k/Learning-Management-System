@@ -4,6 +4,13 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\EnrollmentController;
+use App\Http\Controllers\Api\LessonController;
+use App\Http\Controllers\Api\ModuleController;
+use App\Http\Controllers\Api\AssignmentController;
+use App\Http\Controllers\Api\AssignmentSubmissionController;
+use App\Http\Controllers\Api\QuizAttemptController;
+use App\Http\Controllers\Api\QuizController;
+use App\Http\Controllers\Api\QuizQuestionController;
 
 Route::prefix('v1')->group(function () {
     Route::middleware('web')->group(function () {
@@ -22,5 +29,32 @@ Route::prefix('v1')->group(function () {
         Route::delete('/courses/{course}', [CourseController::class, 'destroy']);
         Route::get('/enrollments', [EnrollmentController::class, 'index']);
         Route::post('/courses/{course}/enroll', [EnrollmentController::class, 'store']);
+
+        Route::post('/courses/{course}/modules', [ModuleController::class, 'store']);
+        Route::patch('/modules/{module}', [ModuleController::class, 'update']);
+        Route::delete('/modules/{module}', [ModuleController::class, 'destroy']);
+        Route::patch('/modules/{module}/reorder', [ModuleController::class, 'reorder']);
+
+        Route::post('/modules/{module}/lessons', [LessonController::class, 'store']);
+        Route::patch('/lessons/{lesson}', [LessonController::class, 'update']);
+        Route::delete('/lessons/{lesson}', [LessonController::class, 'destroy']);
+        Route::patch('/modules/{module}/lessons/reorder', [LessonController::class, 'reorder']);
+
+        Route::post('/courses/{course}/assignments', [AssignmentController::class, 'store']);
+        Route::patch('/assignments/{assignment}', [AssignmentController::class, 'update']);
+        Route::delete('/assignments/{assignment}', [AssignmentController::class, 'destroy']);
+        Route::get('/assignments/{assignment}/submissions', [AssignmentSubmissionController::class, 'index']);
+        Route::post('/assignments/{assignment}/submissions', [AssignmentSubmissionController::class, 'store']);
+        Route::patch('/submissions/{submission}', [AssignmentSubmissionController::class, 'update']);
+
+        Route::post('/courses/{course}/quizzes', [QuizController::class, 'store']);
+        Route::patch('/quizzes/{quiz}', [QuizController::class, 'update']);
+        Route::delete('/quizzes/{quiz}', [QuizController::class, 'destroy']);
+        Route::post('/quizzes/{quiz}/questions', [QuizQuestionController::class, 'store']);
+        Route::patch('/questions/{question}', [QuizQuestionController::class, 'update']);
+        Route::delete('/questions/{question}', [QuizQuestionController::class, 'destroy']);
+        Route::patch('/quizzes/{quiz}/questions/reorder', [QuizQuestionController::class, 'reorder']);
+        Route::get('/quizzes/{quiz}/attempts', [QuizAttemptController::class, 'index']);
+        Route::post('/quizzes/{quiz}/attempts', [QuizAttemptController::class, 'store']);
     });
 });
