@@ -43,7 +43,7 @@ class CourseController extends Controller
             }
         }
 
-        $course->load(['instructor', 'modules.lessons']);
+        $course->load(['instructor', 'modules.lessons', 'assignments', 'quizzes']);
 
         return response()->json(['data' => $course]);
     }

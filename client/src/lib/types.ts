@@ -21,6 +21,8 @@ export type Course = {
   instructor?: User | null;
   modules?: Module[];
   lessons?: Lesson[];
+  assignments?: Assignment[];
+  quizzes?: Quiz[];
 };
 
 export type Module = {
@@ -40,6 +42,28 @@ export type Lesson = {
   video_url?: string | null;
   duration_seconds?: number | null;
   sort_order: number;
+  is_published: boolean;
+};
+
+export type Assignment = {
+  id: number;
+  course_id: number;
+  lesson_id?: number | null;
+  title: string;
+  description?: string | null;
+  due_at?: string | null;
+  max_points: number;
+  is_published: boolean;
+};
+
+export type Quiz = {
+  id: number;
+  course_id: number;
+  lesson_id?: number | null;
+  title: string;
+  description?: string | null;
+  time_limit_minutes?: number | null;
+  max_attempts?: number | null;
   is_published: boolean;
 };
 
