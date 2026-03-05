@@ -17,9 +17,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link className="text-slate-300 hover:text-slate-100" href="/dashboard">
               Dashboard
             </Link>
-            <Link className="text-slate-300 hover:text-slate-100" href="/courses/1">
-              Course Detail
-            </Link>
+            {user?.role === "instructor" || user?.role === "admin" ? (
+              <Link className="text-slate-300 hover:text-slate-100" href="/instructor/courses">
+                Instructor
+              </Link>
+            ) : null}
             {user?.role === "instructor" || user?.role === "admin" ? (
               <span className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300">
                 Instructor view

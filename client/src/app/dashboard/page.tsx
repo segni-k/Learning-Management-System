@@ -66,6 +66,16 @@ export default function DashboardPage() {
                   <span className="uppercase tracking-[0.2em]">{course.status}</span>
                   <span>{course.instructor?.name ?? "Instructor TBD"}</span>
                 </div>
+                <div className="mt-4 flex flex-wrap gap-3 text-xs">
+                  <Link className="text-lime-300" href={`/courses/${course.id}`}>
+                    View course
+                  </Link>
+                  {user?.role === "instructor" || user?.role === "admin" ? (
+                    <Link className="text-slate-300" href={`/instructor/courses/${course.id}`}>
+                      Manage
+                    </Link>
+                  ) : null}
+                </div>
               </article>
             ))}
           </div>
