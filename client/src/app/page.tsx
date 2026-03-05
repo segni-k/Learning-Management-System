@@ -1,64 +1,65 @@
-import Image from "next/image";
+"use client";
+
+import Link from "next/link";
+import { useAuth } from "@/lib/auth-context";
 
 export default function Home() {
+  const { user, loading } = useAuth();
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <main className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-6 py-20">
+        <header className="space-y-6">
+          <p className="text-xs uppercase tracking-[0.4em] text-lime-200/70">
+            Learning management system
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+          <h1 className="text-4xl font-semibold leading-tight md:text-5xl">
+            A focused space for instructors and students to keep learning in motion.
+          </h1>
+          <p className="max-w-2xl text-base text-slate-300">
+            Track courses, lessons, assessments, and progress in one place. This client app talks to the
+            Laravel API using Sanctum session cookies.
+          </p>
+          <div className="flex flex-wrap gap-4">
+            <Link
+              className="rounded-full bg-lime-300 px-6 py-3 text-sm font-semibold text-slate-900"
+              href={user ? "/dashboard" : "/login"}
+            >
+              {loading ? "Checking session..." : user ? "Go to dashboard" : "Sign in"}
+            </Link>
+            <Link
+              className="rounded-full border border-slate-700 px-6 py-3 text-sm font-semibold text-slate-200"
+              href="/register"
+            >
+              Create account
+            </Link>
+          </div>
+        </header>
+
+        <section className="grid gap-6 md:grid-cols-3">
+          {[
+            {
+              title: "Course momentum",
+              copy: "Keep lessons, modules, and resources moving with clear sequencing.",
+            },
+            {
+              title: "Assessment flow",
+              copy: "Assignments and quizzes stay visible with due dates and submissions.",
+            },
+            {
+              title: "Progress clarity",
+              copy: "Track completion and identify exactly where to continue learning.",
+            },
+          ].map((card) => (
+            <div
+              key={card.title}
+              className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl"
+            >
+              <h2 className="text-lg font-semibold">{card.title}</h2>
+              <p className="mt-3 text-sm text-slate-400">{card.copy}</p>
+            </div>
+          ))}
+        </section>
       </main>
     </div>
   );
