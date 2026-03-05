@@ -7,6 +7,7 @@ use App\Http\Requests\Api\StoreAssignmentSubmissionRequest;
 use App\Http\Requests\Api\UpdateAssignmentSubmissionRequest;
 use App\Models\Assignment;
 use App\Models\AssignmentSubmission;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -89,6 +90,9 @@ class AssignmentSubmissionController extends Controller
             abort(404, 'File not found.');
         }
 
-        return Storage::disk('public')->download($submission->file_path);
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
+
+        return $disk->download($submission->file_path);
     }
 }

@@ -5,6 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int|null $course_id
+ * @property int|null $lesson_id
+ * @property int $uploaded_by
+ * @property string $title
+ * @property string $type
+ * @property string $path
+ * @property bool $is_private
+ */
+
 class Resource extends Model
 {
     use HasFactory;

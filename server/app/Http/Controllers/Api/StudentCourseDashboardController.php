@@ -50,6 +50,11 @@ class StudentCourseDashboardController extends Controller
             ->orderByDesc('updated_at')
             ->first();
 
+        $assignmentsLimit = min((int) $request->query('assignments_limit', 5), 20);
+        $quizzesLimit = min((int) $request->query('quizzes_limit', 5), 20);
+        $modulesPage = (int) $request->query('modules_page', 1);
+        $modulesPerPage = min((int) $request->query('modules_per_page', 10), 100);
+
         $upcomingAssignments = Assignment::query()
             ->with(['lesson'])
             ->where('course_id', $course->id)
@@ -57,7 +62,7 @@ class StudentCourseDashboardController extends Controller
             ->whereNotNull('due_at')
             ->where('due_at', '>=', now())
             ->orderBy('due_at')
-            ->limit(5)
+            ->limit($assignmentsLimit)
             ->get();
 
         $recentQuizzes = Quiz::query()
@@ -65,7 +70,7 @@ class StudentCourseDashboardController extends Controller
             ->where('course_id', $course->id)
             ->where('is_published', true)
             ->latest()
-            ->limit(5)
+            ->limit($quizzesLimit)
             ->get();
 
         $moduleProgress = DB::table('lessons')
@@ -92,6 +97,10 @@ class StudentCourseDashboardController extends Controller
                 ];
             });
 
+        $modulesTotal = $moduleProgress->count();
+        $modulesLastPage = (int) ceil($modulesTotal / max($modulesPerPage, 1));
+        $modulesPageData = $moduleProgress->forPage($modulesPage, $modulesPerPage)->values();
+
         return response()->json([
             'data' => [
                 'course' => $course->only(['id', 'title', 'status']),
@@ -110,7 +119,15 @@ class StudentCourseDashboardController extends Controller
                     : null,
                 'upcoming_assignments' => $upcomingAssignments,
                 'recent_quizzes' => $recentQuizzes,
-                'modules' => $moduleProgress,
+                'modules' => $modulesPageData,
+            ],
+            'meta' => [
+                'modules' => [
+                    'current_page' => $modulesPage,
+                    'per_page' => $modulesPerPage,
+                    'total' => $modulesTotal,
+                    'last_page' => $modulesLastPage,
+                ],
             ],
         ]);
     }

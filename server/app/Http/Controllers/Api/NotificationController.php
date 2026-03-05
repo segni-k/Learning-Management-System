@@ -24,7 +24,22 @@ class NotificationController extends Controller
             ->where('user_id', $user->id)
             ->pluck('course_id');
 
-        $upcomingAssignments = Assignment::query()
+        $upcomingAssignments = $this->upcomingAssignments($courseIds);
+        $newLessons = $this->newLessons($courseIds);
+        $availableQuizzes = $this->newQuizzes($courseIds);
+
+        return response()->json([
+            'data' => [
+                'upcoming_assignments' => $upcomingAssignments,
+                'new_lessons' => $newLessons,
+                'new_quizzes' => $availableQuizzes,
+            ],
+        ]);
+    }
+
+    private function upcomingAssignments($courseIds)
+    {
+        return Assignment::query()
             ->with(['course', 'lesson'])
             ->whereIn('course_id', $courseIds)
             ->where('is_published', true)
@@ -43,15 +58,11 @@ class NotificationController extends Controller
                     'due_at' => $assignment->due_at,
                 ];
             });
+    }
 
-        $publishedLessonIds = Lesson::query()
-            ->whereHas('module.course', function ($builder) use ($courseIds) {
-                $builder->whereIn('courses.id', $courseIds);
-            })
-            ->where('is_published', true)
-            ->pluck('id');
-
-        $newLessons = DB::table('lessons')
+    private function newLessons($courseIds)
+    {
+        return DB::table('lessons')
             ->join('modules', 'lessons.module_id', '=', 'modules.id')
             ->whereIn('modules.course_id', $courseIds)
             ->where('lessons.is_published', true)
@@ -69,8 +80,11 @@ class NotificationController extends Controller
                     'created_at' => $lesson->created_at,
                 ];
             });
+    }
 
-        $availableQuizzes = Quiz::query()
+    private function newQuizzes($courseIds)
+    {
+        return Quiz::query()
             ->with(['course', 'lesson'])
             ->whereIn('course_id', $courseIds)
             ->where('is_published', true)
@@ -88,13 +102,5 @@ class NotificationController extends Controller
                     'created_at' => $quiz->created_at,
                 ];
             });
-
-        return response()->json([
-            'data' => [
-                'upcoming_assignments' => $upcomingAssignments,
-                'new_lessons' => $newLessons,
-                'new_quizzes' => $availableQuizzes,
-            ],
-        ]);
     }
 }

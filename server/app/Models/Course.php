@@ -5,6 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int|null $instructor_id
+ * @property string $title
+ * @property string $slug
+ * @property string|null $description
+ * @property string|null $level
+ * @property string $status
+ * @property \Illuminate\Support\Carbon|null $published_at
+ * @property string|null $thumbnail_path
+ */
+
 class Course extends Model
 {
     use HasFactory;

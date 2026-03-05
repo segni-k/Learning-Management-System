@@ -20,6 +20,8 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\StudentCourseworkController;
 use App\Http\Controllers\Api\StudentActivityController;
 use App\Http\Controllers\Api\StudentCourseDashboardController;
+use App\Http\Controllers\Api\InstructorActivityController;
+use App\Http\Controllers\Api\ExportController;
 
 Route::prefix('v1')->group(function () {
     Route::middleware('web')->group(function () {
@@ -78,9 +80,14 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/admin/analytics/overview', [AdminAnalyticsController::class, 'overview']);
         Route::get('/admin/analytics/courses', [AdminAnalyticsController::class, 'courses']);
+        Route::get('/admin/exports/enrollments', [ExportController::class, 'adminEnrollments']);
+        Route::get('/admin/exports/progress', [ExportController::class, 'adminProgress']);
 
         Route::get('/instructor/analytics/overview', [InstructorAnalyticsController::class, 'overview']);
         Route::get('/instructor/analytics/courses', [InstructorAnalyticsController::class, 'courses']);
+        Route::get('/instructor/activity', [InstructorActivityController::class, 'index']);
+        Route::get('/instructor/exports/submissions', [ExportController::class, 'instructorSubmissions']);
+        Route::get('/instructor/exports/attempts', [ExportController::class, 'instructorAttempts']);
 
         Route::get('/student/dashboard/overview', [StudentDashboardController::class, 'overview']);
         Route::get('/student/notifications', [NotificationController::class, 'index']);

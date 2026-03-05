@@ -5,6 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int $assignment_id
+ * @property int $user_id
+ * @property string|null $content
+ * @property string|null $file_path
+ * @property \Illuminate\Support\Carbon|null $submitted_at
+ * @property \Illuminate\Support\Carbon|null $graded_at
+ * @property int|null $score
+ * @property string|null $feedback
+ */
+
 class AssignmentSubmission extends Model
 {
     use HasFactory;

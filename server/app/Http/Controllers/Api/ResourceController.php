@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreResourceRequest;
 use App\Models\Enrollment;
 use App\Models\Resource;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -78,6 +79,8 @@ class ResourceController extends Controller
             abort(422, 'File is required.');
         }
 
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
         $path = $request->file('file')->store('resources', 'public');
 
         $resource = Resource::create([
@@ -92,7 +95,7 @@ class ResourceController extends Controller
 
         return response()->json([
             'data' => $resource,
-            'url' => Storage::disk('public')->url($path),
+            'url' => $disk->url($path),
         ], 201);
     }
 
@@ -146,6 +149,9 @@ class ResourceController extends Controller
             abort(404, 'File not found.');
         }
 
-        return Storage::disk('public')->download($resource->path);
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
+
+        return $disk->download($resource->path);
     }
 }

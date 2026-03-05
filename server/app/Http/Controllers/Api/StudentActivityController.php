@@ -19,7 +19,10 @@ class StudentActivityController extends Controller
         }
 
         $courseId = $request->query('course_id');
-        $limit = min((int) $request->query('limit', 20), 100);
+        $submissionsPage = (int) $request->query('submissions_page', 1);
+        $submissionsPerPage = min((int) $request->query('submissions_per_page', 20), 100);
+        $attemptsPage = (int) $request->query('attempts_page', 1);
+        $attemptsPerPage = min((int) $request->query('attempts_per_page', 20), 100);
 
         if ($courseId && ! $user->isAdmin()) {
             $isEnrolled = Enrollment::query()
@@ -43,10 +46,15 @@ class StudentActivityController extends Controller
             });
         }
 
-        $submissions = $submissionsQuery
-            ->limit($limit)
-            ->get()
-            ->map(function (AssignmentSubmission $submission) {
+        $submissionsPageData = $submissionsQuery
+            ->paginate(
+                $submissionsPerPage,
+                ['*'],
+                'submissions_page',
+                $submissionsPage
+            );
+
+        $submissions = $submissionsPageData->getCollection()->map(function (AssignmentSubmission $submission) {
                 return [
                     'type' => 'assignment_submission',
                     'id' => $submission->id,
@@ -70,10 +78,15 @@ class StudentActivityController extends Controller
             });
         }
 
-        $attempts = $attemptsQuery
-            ->limit($limit)
-            ->get()
-            ->map(function (QuizAttempt $attempt) {
+        $attemptsPageData = $attemptsQuery
+            ->paginate(
+                $attemptsPerPage,
+                ['*'],
+                'attempts_page',
+                $attemptsPage
+            );
+
+        $attempts = $attemptsPageData->getCollection()->map(function (QuizAttempt $attempt) {
                 return [
                     'type' => 'quiz_attempt',
                     'id' => $attempt->id,
@@ -89,6 +102,20 @@ class StudentActivityController extends Controller
             'data' => [
                 'assignment_submissions' => $submissions,
                 'quiz_attempts' => $attempts,
+            ],
+            'meta' => [
+                'assignment_submissions' => [
+                    'current_page' => $submissionsPageData->currentPage(),
+                    'per_page' => $submissionsPageData->perPage(),
+                    'total' => $submissionsPageData->total(),
+                    'last_page' => $submissionsPageData->lastPage(),
+                ],
+                'quiz_attempts' => [
+                    'current_page' => $attemptsPageData->currentPage(),
+                    'per_page' => $attemptsPageData->perPage(),
+                    'total' => $attemptsPageData->total(),
+                    'last_page' => $attemptsPageData->lastPage(),
+                ],
             ],
         ]);
     }
