@@ -62,6 +62,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/courses/{course}/quizzes', [QuizController::class, 'store']);
         Route::patch('/quizzes/{quiz}', [QuizController::class, 'update']);
         Route::delete('/quizzes/{quiz}', [QuizController::class, 'destroy']);
+        Route::get('/quizzes/{quiz}/questions', [QuizQuestionController::class, 'index']);
         Route::post('/quizzes/{quiz}/questions', [QuizQuestionController::class, 'store']);
         Route::patch('/questions/{question}', [QuizQuestionController::class, 'update']);
         Route::delete('/questions/{question}', [QuizQuestionController::class, 'destroy']);

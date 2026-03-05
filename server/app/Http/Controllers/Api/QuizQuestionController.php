@@ -12,6 +12,19 @@ use Illuminate\Support\Facades\DB;
 
 class QuizQuestionController extends Controller
 {
+    public function index(Request $request, Quiz $quiz)
+    {
+        $user = $request->user();
+
+        if (! $user?->isAdmin() && $quiz->course->instructor_id !== $user?->id) {
+            abort(403, 'You do not have permission to view questions for this quiz.');
+        }
+
+        $questions = $quiz->questions()->orderBy('sort_order')->get();
+
+        return response()->json(['data' => $questions]);
+    }
+
     public function store(StoreQuizQuestionRequest $request, Quiz $quiz)
     {
         $user = $request->user();

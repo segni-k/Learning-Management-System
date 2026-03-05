@@ -67,6 +67,17 @@ export type Quiz = {
   is_published: boolean;
 };
 
+export type QuizQuestion = {
+  id: number;
+  quiz_id: number;
+  question_text: string;
+  question_type: "multiple_choice" | "single_choice" | "true_false" | "essay";
+  options?: string[] | null;
+  correct_answer?: string[] | null;
+  points: number;
+  sort_order: number;
+};
+
 export type Enrollment = {
   id: number;
   course_id: number;

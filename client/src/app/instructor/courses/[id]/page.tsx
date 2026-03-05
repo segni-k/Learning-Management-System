@@ -21,8 +21,15 @@ import {
   updateAssignment,
   updateQuiz,
 } from "@/lib/assessments";
+import {
+  createQuizQuestion,
+  deleteQuizQuestion,
+  listQuizQuestions,
+  reorderQuizQuestions,
+  updateQuizQuestion,
+} from "@/lib/quiz-questions";
 import { RequireRole } from "@/components/require-role";
-import type { Assignment, Course, Lesson, Module, Quiz } from "@/lib/types";
+import type { Assignment, Course, Lesson, Module, Quiz, QuizQuestion } from "@/lib/types";
 
 export default function InstructorCourseDetailPage() {
   const params = useParams();
@@ -48,6 +55,35 @@ export default function InstructorCourseDetailPage() {
   const [quizTimeLimit, setQuizTimeLimit] = useState("");
   const [quizPublished, setQuizPublished] = useState(false);
   const [editingQuiz, setEditingQuiz] = useState<Record<number, string>>({});
+  const [draggingModuleId, setDraggingModuleId] = useState<number | null>(null);
+  const [dragOverModuleId, setDragOverModuleId] = useState<number | null>(null);
+  const [draggingLesson, setDraggingLesson] = useState<{ moduleId: number; lessonId: number } | null>(
+    null
+  );
+  const [dragOverLesson, setDragOverLesson] = useState<{ moduleId: number; lessonId: number } | null>(
+    null
+  );
+  const [quizQuestions, setQuizQuestions] = useState<Record<number, QuizQuestion[]>>({});
+  const [questionOrder, setQuestionOrder] = useState<Record<number, number[]>>({});
+  const [expandedQuiz, setExpandedQuiz] = useState<Record<number, boolean>>({});
+  const [questionText, setQuestionText] = useState<Record<number, string>>({});
+  const [questionType, setQuestionType] = useState<Record<number, QuizQuestion["question_type"]>>({});
+  const [questionPoints, setQuestionPoints] = useState<Record<number, number>>({});
+  const [questionOptions, setQuestionOptions] = useState<Record<number, string>>({});
+  const [questionAnswer, setQuestionAnswer] = useState<Record<number, string>>({});
+  const [editingQuestion, setEditingQuestion] = useState<Record<number, string>>({});
+  const [editingQuestionOptions, setEditingQuestionOptions] = useState<Record<number, string>>({});
+  const [editingQuestionAnswer, setEditingQuestionAnswer] = useState<Record<number, string>>({});
+  const [editingQuestionPoints, setEditingQuestionPoints] = useState<Record<number, number>>({});
+  const [editingQuestionType, setEditingQuestionType] = useState<
+    Record<number, QuizQuestion["question_type"]>
+  >({});
+  const [draggingQuestion, setDraggingQuestion] = useState<{ quizId: number; questionId: number } | null>(
+    null
+  );
+  const [dragOverQuestion, setDragOverQuestion] = useState<{ quizId: number; questionId: number } | null>(
+    null
+  );
 
   const moduleCount = useMemo(() => course?.modules?.length ?? 0, [course]);
 
@@ -343,6 +379,174 @@ export default function InstructorCourseDetailPage() {
     }
   };
 
+  const parseCsvList = (value: string) =>
+    value
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+
+  const toggleQuizQuestions = async (quiz: Quiz) => {
+    const next = !(expandedQuiz[quiz.id] ?? false);
+    setExpandedQuiz((prev) => ({ ...prev, [quiz.id]: next }));
+    if (!next) return;
+
+    if (!quizQuestions[quiz.id]) {
+      try {
+        const response = await listQuizQuestions(quiz.id);
+        const questions = response.data;
+        setQuizQuestions((prev) => ({ ...prev, [quiz.id]: questions }));
+        setQuestionOrder((prev) => ({
+          ...prev,
+          [quiz.id]: questions.map((question) => question.id),
+        }));
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : "Failed to load quiz questions");
+      }
+    }
+  };
+
+  const handleCreateQuestion = async (quiz: Quiz) => {
+    const text = questionText[quiz.id];
+    if (!text) return;
+
+    const type = questionType[quiz.id] ?? "multiple_choice";
+    const points = questionPoints[quiz.id] ?? 1;
+    const options = parseCsvList(questionOptions[quiz.id] ?? "");
+    const answer = parseCsvList(questionAnswer[quiz.id] ?? "");
+
+    try {
+      const response = await createQuizQuestion(quiz.id, {
+        question_text: text,
+        question_type: type,
+        points,
+        options: options.length ? options : undefined,
+        correct_answer: answer.length ? answer : undefined,
+      });
+
+      setQuestionText((prev) => ({ ...prev, [quiz.id]: "" }));
+      setQuestionOptions((prev) => ({ ...prev, [quiz.id]: "" }));
+      setQuestionAnswer((prev) => ({ ...prev, [quiz.id]: "" }));
+      setQuestionPoints((prev) => ({ ...prev, [quiz.id]: 1 }));
+
+      setQuizQuestions((prev) => ({
+        ...prev,
+        [quiz.id]: [...(prev[quiz.id] ?? []), response.data],
+      }));
+      setQuestionOrder((prev) => ({
+        ...prev,
+        [quiz.id]: [...(prev[quiz.id] ?? []), response.data.id],
+      }));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Failed to create question");
+    }
+  };
+
+  const handleUpdateQuestion = async (quizId: number, question: QuizQuestion) => {
+    const text = editingQuestion[question.id] ?? question.question_text;
+    const type = editingQuestionType[question.id] ?? question.question_type;
+    const points = editingQuestionPoints[question.id] ?? question.points;
+    const optionsInput = editingQuestionOptions[question.id];
+    const answerInput = editingQuestionAnswer[question.id];
+
+    if (!text) return;
+
+    const payload: Partial<QuizQuestion> = {
+      question_text: text,
+      question_type: type,
+      points,
+    };
+
+    if (optionsInput && optionsInput.trim().length > 0) {
+      payload.options = parseCsvList(optionsInput);
+    }
+
+    if (answerInput && answerInput.trim().length > 0) {
+      payload.correct_answer = parseCsvList(answerInput);
+    }
+
+    try {
+      const response = await updateQuizQuestion(question.id, payload);
+      setEditingQuestion((prev) => ({ ...prev, [question.id]: "" }));
+      setEditingQuestionOptions((prev) => ({ ...prev, [question.id]: "" }));
+      setEditingQuestionAnswer((prev) => ({ ...prev, [question.id]: "" }));
+      setQuizQuestions((prev) => ({
+        ...prev,
+        [quizId]: (prev[quizId] ?? []).map((item) =>
+          item.id === question.id ? response.data : item
+        ),
+      }));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Failed to update question");
+    }
+  };
+
+  const handleDeleteQuestion = async (quizId: number, question: QuizQuestion) => {
+    const confirmed = window.confirm("Delete this question?");
+    if (!confirmed) return;
+
+    try {
+      await deleteQuizQuestion(question.id);
+      setQuizQuestions((prev) => ({
+        ...prev,
+        [quizId]: (prev[quizId] ?? []).filter((item) => item.id !== question.id),
+      }));
+      setQuestionOrder((prev) => ({
+        ...prev,
+        [quizId]: (prev[quizId] ?? []).filter((id) => id !== question.id),
+      }));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Failed to delete question");
+    }
+  };
+
+  const orderedQuestions = (quizId: number) => {
+    const questions = quizQuestions[quizId] ?? [];
+    if (!questions.length) return [];
+
+    const map = new Map(questions.map((question) => [question.id, question]));
+    const ids = questionOrder[quizId] ?? questions.map((question) => question.id);
+    return ids.map((id) => map.get(id)).filter(Boolean) as QuizQuestion[];
+  };
+
+  const handleQuestionDragStart = (
+    event: React.DragEvent<HTMLDivElement>,
+    quizId: number,
+    questionId: number
+  ) => {
+    event.dataTransfer.setData("text/plain", `question:${quizId}:${questionId}`);
+    setDraggingQuestion({ quizId, questionId });
+  };
+
+  const handleQuestionDrop = async (
+    event: React.DragEvent<HTMLDivElement>,
+    quizId: number,
+    targetId: number
+  ) => {
+    event.preventDefault();
+    const payload = event.dataTransfer.getData("text/plain");
+    if (!payload.startsWith("question:")) return;
+
+    const [, payloadQuizId, payloadQuestionId] = payload.split(":");
+    const sourceQuizId = Number(payloadQuizId);
+    const sourceQuestionId = Number(payloadQuestionId);
+    if (!sourceQuizId || !sourceQuestionId) return;
+    if (sourceQuizId !== quizId) return;
+    if (sourceQuestionId === targetId) return;
+
+    const order = questionOrder[quizId] ?? orderedQuestions(quizId).map((item) => item.id);
+    const nextOrder = moveItem(order, sourceQuestionId, targetId);
+    setQuestionOrder((prev) => ({ ...prev, [quizId]: nextOrder }));
+
+    try {
+      await reorderQuizQuestions(quizId, nextOrder);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Failed to reorder questions");
+    } finally {
+      setDragOverQuestion(null);
+      setDraggingQuestion(null);
+    }
+  };
+
   const moveItem = (order: number[], fromId: number, toId: number) => {
     const fromIndex = order.indexOf(fromId);
     const toIndex = order.indexOf(toId);
@@ -380,6 +584,7 @@ export default function InstructorCourseDetailPage() {
 
   const handleModuleDragStart = (event: React.DragEvent<HTMLDivElement>, moduleId: number) => {
     event.dataTransfer.setData("text/plain", `module:${moduleId}`);
+    setDraggingModuleId(moduleId);
   };
 
   const handleModuleDrop = async (event: React.DragEvent<HTMLDivElement>, targetId: number) => {
@@ -402,6 +607,9 @@ export default function InstructorCourseDetailPage() {
       await load();
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Failed to reorder modules");
+    } finally {
+      setDragOverModuleId(null);
+      setDraggingModuleId(null);
     }
   };
 
@@ -411,6 +619,7 @@ export default function InstructorCourseDetailPage() {
     lessonId: number
   ) => {
     event.dataTransfer.setData("text/plain", `lesson:${moduleId}:${lessonId}`);
+    setDraggingLesson({ moduleId, lessonId });
   };
 
   const handleLessonDrop = async (
@@ -438,6 +647,9 @@ export default function InstructorCourseDetailPage() {
       await load();
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Failed to reorder lessons");
+    } finally {
+      setDragOverLesson(null);
+      setDraggingLesson(null);
     }
   };
 
@@ -488,15 +700,27 @@ export default function InstructorCourseDetailPage() {
           {orderedModules.map((module) => (
             <div
               key={module.id}
-              className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6"
+              className={`rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition ${
+                dragOverModuleId === module.id ? "ring-2 ring-lime-300/40" : ""
+              } ${draggingModuleId === module.id ? "opacity-70" : ""}`}
               draggable
               onDragStart={(event) => handleModuleDragStart(event, module.id)}
-              onDragOver={(event) => event.preventDefault()}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setDragOverModuleId(module.id);
+              }}
+              onDragEnd={() => {
+                setDragOverModuleId(null);
+                setDraggingModuleId(null);
+              }}
               onDrop={(event) => void handleModuleDrop(event, module.id)}
             >
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-lg font-semibold">{module.title}</h3>
+                  <div className="flex items-center gap-3">
+                    <span className="cursor-grab text-sm text-slate-500">::</span>
+                    <h3 className="text-lg font-semibold">{module.title}</h3>
+                  </div>
                   <p className="text-sm text-slate-400">{module.description ?? "No description"}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -562,14 +786,32 @@ export default function InstructorCourseDetailPage() {
                   {getOrderedLessons(module).map((lesson) => (
                     <div
                       key={lesson.id}
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3"
+                      className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3 transition ${
+                        dragOverLesson?.lessonId === lesson.id && dragOverLesson?.moduleId === module.id
+                          ? "ring-2 ring-lime-300/30"
+                          : ""
+                      } ${
+                        draggingLesson?.lessonId === lesson.id && draggingLesson?.moduleId === module.id
+                          ? "opacity-70"
+                          : ""
+                      }`}
                       draggable
                       onDragStart={(event) => handleLessonDragStart(event, module.id, lesson.id)}
-                      onDragOver={(event) => event.preventDefault()}
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        setDragOverLesson({ moduleId: module.id, lessonId: lesson.id });
+                      }}
+                      onDragEnd={() => {
+                        setDragOverLesson(null);
+                        setDraggingLesson(null);
+                      }}
                       onDrop={(event) => void handleLessonDrop(event, module, lesson.id)}
                     >
                       <div>
-                        <p className="text-sm font-medium">{lesson.title}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="cursor-grab text-xs text-slate-500">::</span>
+                          <p className="text-sm font-medium">{lesson.title}</p>
+                        </div>
                         <p className="text-xs text-slate-500">
                           {lesson.is_published ? "Published" : "Draft"}
                         </p>
@@ -828,6 +1070,13 @@ export default function InstructorCourseDetailPage() {
                       Toggle publish
                     </button>
                     <button
+                      className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                      type="button"
+                      onClick={() => void toggleQuizQuestions(quiz)}
+                    >
+                      Questions
+                    </button>
+                    <button
                       className="rounded-full border border-rose-500/40 px-4 py-2 text-xs text-rose-200"
                       type="button"
                       onClick={() => void handleDeleteQuiz(quiz)}
@@ -836,6 +1085,205 @@ export default function InstructorCourseDetailPage() {
                     </button>
                   </div>
                 </div>
+                {expandedQuiz[quiz.id] ? (
+                  <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                    <h3 className="text-sm font-semibold">Quiz questions</h3>
+                    <div className="mt-3 grid gap-3">
+                      <input
+                        className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs"
+                        value={questionText[quiz.id] ?? ""}
+                        onChange={(event) =>
+                          setQuestionText((prev) => ({ ...prev, [quiz.id]: event.target.value }))
+                        }
+                        placeholder="Question text"
+                      />
+                      <div className="grid gap-3 md:grid-cols-3">
+                        <select
+                          className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs"
+                          value={questionType[quiz.id] ?? "multiple_choice"}
+                          onChange={(event) =>
+                            setQuestionType((prev) => ({
+                              ...prev,
+                              [quiz.id]: event.target.value as QuizQuestion["question_type"],
+                            }))
+                          }
+                        >
+                          <option value="multiple_choice">Multiple choice</option>
+                          <option value="single_choice">Single choice</option>
+                          <option value="true_false">True/False</option>
+                          <option value="essay">Essay</option>
+                        </select>
+                        <input
+                          className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs"
+                          value={questionPoints[quiz.id] ?? 1}
+                          onChange={(event) =>
+                            setQuestionPoints((prev) => ({
+                              ...prev,
+                              [quiz.id]: Number(event.target.value),
+                            }))
+                          type="number"
+                          min={1}
+                        />
+                        <button
+                          className="rounded-full bg-lime-300 px-4 py-2 text-xs font-semibold text-slate-900"
+                          type="button"
+                          onClick={() => void handleCreateQuestion(quiz)}
+                        >
+                          Add question
+                        </button>
+                      </div>
+                      <input
+                        className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs"
+                        value={questionOptions[quiz.id] ?? ""}
+                        onChange={(event) =>
+                          setQuestionOptions((prev) => ({
+                            ...prev,
+                            [quiz.id]: event.target.value,
+                          }))
+                        }
+                        placeholder="Options (comma separated)"
+                      />
+                      <input
+                        className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs"
+                        value={questionAnswer[quiz.id] ?? ""}
+                        onChange={(event) =>
+                          setQuestionAnswer((prev) => ({
+                            ...prev,
+                            [quiz.id]: event.target.value,
+                          }))
+                        }
+                        placeholder="Correct answer (comma separated)"
+                      />
+                    </div>
+
+                    <div className="mt-4 space-y-2">
+                      {orderedQuestions(quiz.id).map((question) => (
+                        <div
+                          key={question.id}
+                          className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3 ${
+                            dragOverQuestion?.quizId === quiz.id &&
+                            dragOverQuestion?.questionId === question.id
+                              ? "ring-2 ring-lime-300/30"
+                              : ""
+                          } ${
+                            draggingQuestion?.quizId === quiz.id &&
+                            draggingQuestion?.questionId === question.id
+                              ? "opacity-70"
+                              : ""
+                          }`}
+                          draggable
+                          onDragStart={(event) => handleQuestionDragStart(event, quiz.id, question.id)}
+                          onDragOver={(event) => {
+                            event.preventDefault();
+                            setDragOverQuestion({ quizId: quiz.id, questionId: question.id });
+                          }}
+                          onDragEnd={() => {
+                            setDragOverQuestion(null);
+                            setDraggingQuestion(null);
+                          }}
+                          onDrop={(event) => void handleQuestionDrop(event, quiz.id, question.id)}
+                        >
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="cursor-grab text-xs text-slate-500">::</span>
+                              <p className="text-sm font-medium">{question.question_text}</p>
+                            </div>
+                            <p className="text-xs text-slate-500">
+                              {question.question_type} · {question.points} pts
+                            </p>
+                            <div className="mt-3 grid gap-2 md:grid-cols-2">
+                              <select
+                                className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs"
+                                value={editingQuestionType[question.id] ?? question.question_type}
+                                onChange={(event) =>
+                                  setEditingQuestionType((prev) => ({
+                                    ...prev,
+                                    [question.id]: event.target.value as QuizQuestion["question_type"],
+                                  }))
+                                }
+                              >
+                                <option value="multiple_choice">Multiple choice</option>
+                                <option value="single_choice">Single choice</option>
+                                <option value="true_false">True/False</option>
+                                <option value="essay">Essay</option>
+                              </select>
+                              <input
+                                className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs"
+                                type="number"
+                                min={1}
+                                value={editingQuestionPoints[question.id] ?? question.points}
+                                onChange={(event) =>
+                                  setEditingQuestionPoints((prev) => ({
+                                    ...prev,
+                                    [question.id]: Number(event.target.value),
+                                  }))
+                                }
+                              />
+                              <input
+                                className="md:col-span-2 rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs"
+                                value={
+                                  editingQuestionOptions[question.id] ??
+                                  (question.options ? question.options.join(", ") : "")
+                                }
+                                onChange={(event) =>
+                                  setEditingQuestionOptions((prev) => ({
+                                    ...prev,
+                                    [question.id]: event.target.value,
+                                  }))
+                                }
+                                placeholder="Options (comma separated)"
+                              />
+                              <input
+                                className="md:col-span-2 rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs"
+                                value={
+                                  editingQuestionAnswer[question.id] ??
+                                  (question.correct_answer ? question.correct_answer.join(", ") : "")
+                                }
+                                onChange={(event) =>
+                                  setEditingQuestionAnswer((prev) => ({
+                                    ...prev,
+                                    [question.id]: event.target.value,
+                                  }))
+                                }
+                                placeholder="Correct answer (comma separated)"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <input
+                              className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs"
+                              value={editingQuestion[question.id] ?? ""}
+                              onChange={(event) =>
+                                setEditingQuestion((prev) => ({
+                                  ...prev,
+                                  [question.id]: event.target.value,
+                                }))
+                              }
+                              placeholder="Rename"
+                            />
+                            <button
+                              className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                              type="button"
+                              onClick={() => void handleUpdateQuestion(quiz.id, question)}
+                            >
+                              Save
+                            </button>
+                            <button
+                              className="rounded-full border border-rose-500/40 px-4 py-2 text-xs text-rose-200"
+                              type="button"
+                              onClick={() => void handleDeleteQuestion(quiz.id, question)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      {!orderedQuestions(quiz.id).length && (
+                        <p className="text-sm text-slate-400">No questions yet.</p>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
               ))}
               {!(course?.quizzes ?? []).length && (
                 <p className="text-sm text-slate-400">No quizzes yet.</p>
