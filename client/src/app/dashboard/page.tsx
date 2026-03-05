@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { listCourses } from "@/lib/courses";
 import { useAuth } from "@/lib/auth-context";
+import { RequireAuth } from "@/components/require-auth";
 import type { Course } from "@/lib/types";
 
 export default function DashboardPage() {
@@ -26,25 +27,8 @@ export default function DashboardPage() {
     void load();
   }, [user]);
 
-  if (loading) {
-    return <div className="min-h-screen bg-slate-950 text-slate-200">Loading...</div>;
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-slate-200">
-        <main className="mx-auto flex max-w-xl flex-col gap-4 px-6 py-16">
-          <h1 className="text-2xl font-semibold">You are signed out</h1>
-          <Link className="text-lime-300" href="/login">
-            Go to login
-          </Link>
-        </main>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <RequireAuth>
       <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-16">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -87,6 +71,6 @@ export default function DashboardPage() {
           </div>
         </section>
       </main>
-    </div>
+    </RequireAuth>
   );
 }
