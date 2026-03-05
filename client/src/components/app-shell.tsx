@@ -23,6 +23,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </Link>
             ) : null}
             {user?.role === "instructor" || user?.role === "admin" ? (
+              <Link className="text-slate-300 hover:text-slate-100" href="/instructor/analytics">
+                Analytics
+              </Link>
+            ) : null}
+            {user?.role === "instructor" || user?.role === "admin" ? (
+              <Link className="text-slate-300 hover:text-slate-100" href="/instructor/activity">
+                Activity
+              </Link>
+            ) : null}
+            {user?.role === "admin" ? (
+              <Link className="text-slate-300 hover:text-slate-100" href="/admin/analytics">
+                Admin analytics
+              </Link>
+            ) : null}
+            {user?.role === "instructor" || user?.role === "admin" ? (
               <span className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300">
                 Instructor view
               </span>

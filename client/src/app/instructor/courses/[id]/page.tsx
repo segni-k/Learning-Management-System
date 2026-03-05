@@ -22,14 +22,31 @@ import {
   updateQuiz,
 } from "@/lib/assessments";
 import {
+  listAssignmentSubmissions,
+  submissionDownloadUrl,
+  updateAssignmentSubmission,
+} from "@/lib/submissions";
+import {
   createQuizQuestion,
   deleteQuizQuestion,
   listQuizQuestions,
   reorderQuizQuestions,
   updateQuizQuestion,
 } from "@/lib/quiz-questions";
+import { listQuizAttempts } from "@/lib/quiz-attempts";
+import { listResources, resourceDownloadUrl, uploadResource } from "@/lib/resources";
 import { RequireRole } from "@/components/require-role";
-import type { Assignment, Course, Lesson, Module, Quiz, QuizQuestion } from "@/lib/types";
+import type {
+  Assignment,
+  AssignmentSubmission,
+  Course,
+  Lesson,
+  Module,
+  Quiz,
+  QuizAttempt,
+  QuizQuestion,
+  Resource,
+} from "@/lib/types";
 
 export default function InstructorCourseDetailPage() {
   const params = useParams();
@@ -78,12 +95,28 @@ export default function InstructorCourseDetailPage() {
   const [editingQuestionType, setEditingQuestionType] = useState<
     Record<number, QuizQuestion["question_type"]>
   >({});
+  const [bulkInput, setBulkInput] = useState<Record<number, string>>({});
+  const [bulkErrors, setBulkErrors] = useState<Record<number, string[]>>({});
   const [draggingQuestion, setDraggingQuestion] = useState<{ quizId: number; questionId: number } | null>(
     null
   );
   const [dragOverQuestion, setDragOverQuestion] = useState<{ quizId: number; questionId: number } | null>(
     null
   );
+  const [expandedAssignment, setExpandedAssignment] = useState<Record<number, boolean>>({});
+  const [assignmentSubmissions, setAssignmentSubmissions] = useState<
+    Record<number, AssignmentSubmission[]>
+  >({});
+  const [gradingScore, setGradingScore] = useState<Record<number, number>>({});
+  const [expandedQuizAttempts, setExpandedQuizAttempts] = useState<Record<number, boolean>>({});
+  const [quizAttempts, setQuizAttempts] = useState<Record<number, QuizAttempt[]>>({});
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [resourceTitle, setResourceTitle] = useState("");
+  const [resourceType, setResourceType] = useState("file");
+  const [resourceLessonId, setResourceLessonId] = useState("");
+  const [resourceFile, setResourceFile] = useState<File | null>(null);
+  const [resourcePrivate, setResourcePrivate] = useState(true);
+  const [resourceUploading, setResourceUploading] = useState(false);
 
   const moduleCount = useMemo(() => course?.modules?.length ?? 0, [course]);
 
@@ -105,6 +138,9 @@ export default function InstructorCourseDetailPage() {
           .map((lesson) => lesson.id);
       });
       setLessonOrder(nextLessonOrder);
+
+      const resourcesResponse = await listResources({ course_id: id });
+      setResources(resourcesResponse.data);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Failed to load course");
     }
@@ -319,6 +355,37 @@ export default function InstructorCourseDetailPage() {
     }
   };
 
+  const toggleAssignmentSubmissions = async (assignment: Assignment) => {
+    const next = !(expandedAssignment[assignment.id] ?? false);
+    setExpandedAssignment((prev) => ({ ...prev, [assignment.id]: next }));
+    if (!next) return;
+
+    if (!assignmentSubmissions[assignment.id]) {
+      try {
+        const response = await listAssignmentSubmissions(assignment.id);
+        setAssignmentSubmissions((prev) => ({ ...prev, [assignment.id]: response.data }));
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : "Failed to load submissions");
+      }
+    }
+  };
+
+  const handleGradeSubmission = async (assignmentId: number, submissionId: number) => {
+    const score = gradingScore[submissionId];
+    if (score === undefined) return;
+    try {
+      const response = await updateAssignmentSubmission(submissionId, { score });
+      setAssignmentSubmissions((prev) => ({
+        ...prev,
+        [assignmentId]: (prev[assignmentId] ?? []).map((item) =>
+          item.id === submissionId ? response.data : item
+        ),
+      }));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Failed to grade submission");
+    }
+  };
+
   const handleCreateQuiz = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!id) return;
@@ -379,11 +446,255 @@ export default function InstructorCourseDetailPage() {
     }
   };
 
+  const toggleQuizAttempts = async (quiz: Quiz) => {
+    const next = !(expandedQuizAttempts[quiz.id] ?? false);
+    setExpandedQuizAttempts((prev) => ({ ...prev, [quiz.id]: next }));
+    if (!next) return;
+
+    if (!quizAttempts[quiz.id]) {
+      try {
+        const response = await listQuizAttempts(quiz.id);
+        setQuizAttempts((prev) => ({ ...prev, [quiz.id]: response.data }));
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : "Failed to load quiz attempts");
+      }
+    }
+  };
+
   const parseCsvList = (value: string) =>
     value
       .split(",")
       .map((item) => item.trim())
       .filter((item) => item.length > 0);
+
+  const parseFlexibleList = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    const delimiter = trimmed.includes(";") ? ";" : ",";
+    return trimmed
+      .split(delimiter)
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+  };
+
+  const parseCsvLine = (line: string) => {
+    const values: string[] = [];
+    let current = "";
+    let inQuotes = false;
+
+    for (let index = 0; index < line.length; index += 1) {
+      const char = line[index];
+      if (char === '"') {
+        if (inQuotes && line[index + 1] === '"') {
+          current += '"';
+          index += 1;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === "," && !inQuotes) {
+        values.push(current.trim());
+        current = "";
+      } else {
+        current += char;
+      }
+    }
+    values.push(current.trim());
+    return values;
+  };
+
+  const validateQuestionConfig = (
+    type: QuizQuestion["question_type"],
+    options: string[],
+    answers: string[]
+  ) => {
+    if (type === "essay") return null;
+    if (!options.length) return "Options are required for this question type.";
+    if (!answers.length) return "Correct answer is required for this question type.";
+    return null;
+  };
+
+  const importBulkQuestions = async (
+    quiz: Quiz,
+    itemsWithLabels: Array<{
+      item: {
+        question_text?: string;
+        question_type?: QuizQuestion["question_type"] | string;
+        options?: string[] | string;
+        correct_answer?: string[] | string;
+        points?: number | string;
+      };
+      label: string;
+    }>
+  ) => {
+    if (!itemsWithLabels.length) return;
+    const validItems: Array<{
+      question_text: string;
+      question_type: QuizQuestion["question_type"];
+      options?: string[];
+      correct_answer?: string[];
+      points?: number;
+    }> = [];
+    const errors: string[] = [];
+    const allowedTypes: QuizQuestion["question_type"][] = [
+      "multiple_choice",
+      "single_choice",
+      "true_false",
+      "essay",
+    ];
+
+    itemsWithLabels.forEach(({ item, label }) => {
+      const rawText = item.question_text?.trim();
+      if (!rawText) {
+        errors.push(`${label}: question_text is required.`);
+        return;
+      }
+
+      const rawType = item.question_type ?? "multiple_choice";
+      const normalizedType = allowedTypes.includes(rawType as QuizQuestion["question_type"])
+        ? (rawType as QuizQuestion["question_type"])
+        : null;
+
+      if (!normalizedType) {
+        errors.push(`${label}: invalid question_type.`);
+        return;
+      }
+
+      const normalizedPoints = item.points === undefined ? 1 : Number(item.points);
+      if (!Number.isFinite(normalizedPoints) || normalizedPoints <= 0) {
+        errors.push(`${label}: points must be a positive number.`);
+        return;
+      }
+
+      const optionsList = Array.isArray(item.options)
+        ? item.options
+        : typeof item.options === "string"
+        ? parseCsvList(item.options)
+        : [];
+      const answersList = Array.isArray(item.correct_answer)
+        ? item.correct_answer
+        : typeof item.correct_answer === "string"
+        ? parseCsvList(item.correct_answer)
+        : [];
+      const configMessage = validateQuestionConfig(normalizedType, optionsList, answersList);
+      if (configMessage) {
+        errors.push(`${label}: ${configMessage}`);
+        return;
+      }
+
+      validItems.push({
+        question_text: rawText,
+        question_type: normalizedType,
+        points: normalizedPoints,
+        options: optionsList.length ? optionsList : undefined,
+        correct_answer: answersList.length ? answersList : undefined,
+      });
+    });
+
+    setBulkErrors((prev) => ({ ...prev, [quiz.id]: errors }));
+    if (!validItems.length) return;
+
+    try {
+      const created: QuizQuestion[] = [];
+      for (const item of validItems) {
+        const response = await createQuizQuestion(quiz.id, item);
+        created.push(response.data);
+      }
+      setBulkInput((prev) => ({ ...prev, [quiz.id]: "" }));
+      setQuizQuestions((prev) => ({
+        ...prev,
+        [quiz.id]: [...(prev[quiz.id] ?? []), ...created],
+      }));
+      setQuestionOrder((prev) => ({
+        ...prev,
+        [quiz.id]: [...(prev[quiz.id] ?? []), ...created.map((question) => question.id)],
+      }));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Failed to import questions");
+    }
+  };
+
+  const handleBulkImport = async (quiz: Quiz) => {
+    const raw = bulkInput[quiz.id];
+    if (!raw) return;
+    setBulkErrors((prev) => ({ ...prev, [quiz.id]: [] }));
+
+    let itemsWithLabels: Array<{
+      item: {
+        question_text?: string;
+        question_type?: QuizQuestion["question_type"] | string;
+        options?: string[] | string;
+        correct_answer?: string[] | string;
+        points?: number | string;
+      };
+      label: string;
+    }> = [];
+
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        itemsWithLabels = parsed.map((item, index) => ({
+          item,
+          label: `Item ${index + 1}`,
+        }));
+      } else {
+        throw new Error("JSON must be an array");
+      }
+    } catch {
+      const lines = raw.split("\n").map((line) => line.trim()).filter(Boolean);
+      itemsWithLabels = lines.map((line, index) => {
+        const [question_text, type, points, options, answers] = line
+          .split("|")
+          .map((value) => value.trim());
+        return {
+          item: {
+            question_text,
+            question_type: type || "multiple_choice",
+            points: points ? Number(points) : 1,
+            options: options ? parseCsvList(options) : undefined,
+            correct_answer: answers ? parseCsvList(answers) : undefined,
+          },
+          label: `Line ${index + 1}`,
+        };
+      });
+    }
+
+    await importBulkQuestions(quiz, itemsWithLabels);
+  };
+
+  const handleBulkFileUpload = async (quiz: Quiz, file: File) => {
+    const raw = await file.text();
+    const trimmed = raw.trim();
+    if (!trimmed) return;
+
+    if (file.name.toLowerCase().endsWith(".json") || trimmed.startsWith("[")) {
+      setBulkInput((prev) => ({ ...prev, [quiz.id]: trimmed }));
+      await handleBulkImport(quiz);
+      return;
+    }
+
+    const lines = trimmed.split(/\r?\n/).filter(Boolean);
+    if (!lines.length) return;
+
+    const header = lines[0].toLowerCase();
+    const dataLines =
+      header.includes("question") && header.includes("type") ? lines.slice(1) : lines;
+
+    const itemsWithLabels = dataLines.map((line, index) => {
+      const [question_text, type, points, options, answers] = parseCsvLine(line);
+      return {
+        item: {
+          question_text,
+          question_type: type || "multiple_choice",
+          points: points ? Number(points) : 1,
+          options: options ? parseFlexibleList(options) : undefined,
+          correct_answer: answers ? parseFlexibleList(answers) : undefined,
+        },
+        label: `Line ${index + 1}`,
+      };
+    });
+
+    await importBulkQuestions(quiz, itemsWithLabels);
+  };
 
   const toggleQuizQuestions = async (quiz: Quiz) => {
     const next = !(expandedQuiz[quiz.id] ?? false);
@@ -653,6 +964,34 @@ export default function InstructorCourseDetailPage() {
     }
   };
 
+  const handleUploadResource = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!id || !resourceTitle || !resourceFile) return;
+    setResourceUploading(true);
+    setStatus(null);
+
+    try {
+      const response = await uploadResource({
+        title: resourceTitle,
+        type: resourceType,
+        course_id: id,
+        lesson_id: resourceLessonId ? Number(resourceLessonId) : undefined,
+        is_private: resourcePrivate,
+        file: resourceFile,
+      });
+      setResources((prev) => [response.data, ...prev]);
+      setResourceTitle("");
+      setResourceType("file");
+      setResourceLessonId("");
+      setResourceFile(null);
+      setResourcePrivate(true);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Failed to upload resource");
+    } finally {
+      setResourceUploading(false);
+    }
+  };
+
   return (
     <RequireRole roles={["instructor", "admin"]}>
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-16">
@@ -784,102 +1123,111 @@ export default function InstructorCourseDetailPage() {
 
                 <div className="space-y-2">
                   {getOrderedLessons(module).map((lesson) => (
-                    <div
-                      key={lesson.id}
-                      className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3 transition ${
-                        dragOverLesson?.lessonId === lesson.id && dragOverLesson?.moduleId === module.id
-                          ? "ring-2 ring-lime-300/30"
-                          : ""
-                      } ${
-                        draggingLesson?.lessonId === lesson.id && draggingLesson?.moduleId === module.id
-                          ? "opacity-70"
-                          : ""
-                      }`}
-                      draggable
-                      onDragStart={(event) => handleLessonDragStart(event, module.id, lesson.id)}
-                      onDragOver={(event) => {
-                        event.preventDefault();
-                        setDragOverLesson({ moduleId: module.id, lessonId: lesson.id });
-                      }}
-                      onDragEnd={() => {
-                        setDragOverLesson(null);
-                        setDraggingLesson(null);
-                      }}
-                      onDrop={(event) => void handleLessonDrop(event, module, lesson.id)}
-                    >
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="cursor-grab text-xs text-slate-500">::</span>
-                          <p className="text-sm font-medium">{lesson.title}</p>
+                    <div key={lesson.id} className="space-y-3">
+                      <div
+                        className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3 transition ${
+                          dragOverLesson?.lessonId === lesson.id &&
+                          dragOverLesson?.moduleId === module.id
+                            ? "ring-2 ring-lime-300/30"
+                            : ""
+                        } ${
+                          draggingLesson?.lessonId === lesson.id &&
+                          draggingLesson?.moduleId === module.id
+                            ? "opacity-70"
+                            : ""
+                        }`}
+                        draggable
+                        onDragStart={(event) => handleLessonDragStart(event, module.id, lesson.id)}
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                          setDragOverLesson({ moduleId: module.id, lessonId: lesson.id });
+                        }}
+                        onDragEnd={() => {
+                          setDragOverLesson(null);
+                          setDraggingLesson(null);
+                        }}
+                        onDrop={(event) => void handleLessonDrop(event, module, lesson.id)}
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="cursor-grab text-xs text-slate-500">::</span>
+                            <p className="text-sm font-medium">{lesson.title}</p>
+                          </div>
+                          <p className="text-xs text-slate-500">
+                            {lesson.is_published ? "Published" : "Draft"}
+                          </p>
                         </div>
-                        <p className="text-xs text-slate-500">
-                          {lesson.is_published ? "Published" : "Draft"}
-                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          <input
+                            className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm"
+                            value={editingLesson[lesson.id] ?? ""}
+                            onChange={(event) =>
+                              setEditingLesson((prev) => ({
+                                ...prev,
+                                [lesson.id]: event.target.value,
+                              }))
+                            }
+                            placeholder="Rename lesson"
+                          />
+                          <button
+                            className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                            type="button"
+                            onClick={() => void handleUpdateLesson(lesson)}
+                          >
+                            Save
+                          </button>
+                          <button
+                            className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                            type="button"
+                            onClick={() => void handleMoveLesson(module, lesson.id, "up")}
+                          >
+                            Move up
+                          </button>
+                          <button
+                            className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                            type="button"
+                            onClick={() => void handleMoveLesson(module, lesson.id, "down")}
+                          >
+                            Move down
+                          </button>
+                          <button
+                            className="rounded-full border border-rose-500/40 px-4 py-2 text-xs text-rose-200"
+                            type="button"
+                            onClick={() => void handleDeleteLesson(lesson)}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        <input
-                          className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm"
-                          value={editingLesson[lesson.id] ?? ""}
+                      <div className="grid gap-3">
+                        <label className="flex items-center gap-2 text-xs text-slate-400">
+                          <input
+                            type="checkbox"
+                            checked={lessonPublish[lesson.id] ?? lesson.is_published}
+                            onChange={() => void handleTogglePublish(lesson)}
+                          />
+                          Published
+                        </label>
+                        <textarea
+                          className="min-h-[120px] w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-200"
+                          value={lessonContent[lesson.id] ?? lesson.content ?? ""}
                           onChange={(event) =>
-                            setEditingLesson((prev) => ({ ...prev, [lesson.id]: event.target.value }))
+                            setLessonContent((prev) => ({
+                              ...prev,
+                              [lesson.id]: event.target.value,
+                            }))
                           }
-                          placeholder="Rename lesson"
+                          placeholder="Lesson content"
                         />
-                        <button
-                          className="rounded-full border border-slate-700 px-4 py-2 text-xs"
-                          type="button"
-                          onClick={() => void handleUpdateLesson(lesson)}
-                        >
-                          Save
-                        </button>
-                        <button
-                          className="rounded-full border border-slate-700 px-4 py-2 text-xs"
-                          type="button"
-                          onClick={() => void handleMoveLesson(module, lesson.id, "up")}
-                        >
-                          Move up
-                        </button>
-                        <button
-                          className="rounded-full border border-slate-700 px-4 py-2 text-xs"
-                          type="button"
-                          onClick={() => void handleMoveLesson(module, lesson.id, "down")}
-                        >
-                          Move down
-                        </button>
-                        <button
-                          className="rounded-full border border-rose-500/40 px-4 py-2 text-xs text-rose-200"
-                          type="button"
-                          onClick={() => void handleDeleteLesson(lesson)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                    <div className="mt-3 grid gap-3">
-                      <label className="flex items-center gap-2 text-xs text-slate-400">
-                        <input
-                          type="checkbox"
-                          checked={lessonPublish[lesson.id] ?? lesson.is_published}
-                          onChange={() => void handleTogglePublish(lesson)}
-                        />
-                        Published
-                      </label>
-                      <textarea
-                        className="min-h-[120px] w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-200"
-                        value={lessonContent[lesson.id] ?? lesson.content ?? ""}
-                        onChange={(event) =>
-                          setLessonContent((prev) => ({ ...prev, [lesson.id]: event.target.value }))
-                        }
-                        placeholder="Lesson content"
-                      />
-                      <div>
-                        <button
-                          className="rounded-full border border-slate-700 px-4 py-2 text-xs"
-                          type="button"
-                          onClick={() => void handleUpdateLessonContent(lesson)}
-                        >
-                          Save content
-                        </button>
+                        <div>
+                          <button
+                            className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                            type="button"
+                            onClick={() => void handleUpdateLessonContent(lesson)}
+                          >
+                            Save content
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -936,50 +1284,109 @@ export default function InstructorCourseDetailPage() {
 
             <div className="mt-6 space-y-3">
               {(course?.assignments ?? []).map((assignment) => (
-                <div
-                  key={assignment.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3"
-                >
-                  <div>
-                    <p className="text-sm font-semibold">{assignment.title}</p>
-                    <p className="text-xs text-slate-500">
-                      {assignment.is_published ? "Published" : "Draft"}
-                    </p>
+                <div key={assignment.id} className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                    <div>
+                      <p className="text-sm font-semibold">{assignment.title}</p>
+                      <p className="text-xs text-slate-500">
+                        {assignment.is_published ? "Published" : "Draft"}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <input
+                        className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs"
+                        value={editingAssignment[assignment.id] ?? ""}
+                        onChange={(event) =>
+                          setEditingAssignment((prev) => ({
+                            ...prev,
+                            [assignment.id]: event.target.value,
+                          }))
+                        }
+                        placeholder="Rename"
+                      />
+                      <button
+                        className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                        type="button"
+                        onClick={() => void handleUpdateAssignment(assignment)}
+                      >
+                        Save
+                      </button>
+                      <button
+                        className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                        type="button"
+                        onClick={() => void handleToggleAssignmentPublish(assignment)}
+                      >
+                        Toggle publish
+                      </button>
+                      <button
+                        className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                        type="button"
+                        onClick={() => void toggleAssignmentSubmissions(assignment)}
+                      >
+                        Submissions
+                      </button>
+                      <button
+                        className="rounded-full border border-rose-500/40 px-4 py-2 text-xs text-rose-200"
+                        type="button"
+                        onClick={() => void handleDeleteAssignment(assignment)}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <input
-                      className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs"
-                      value={editingAssignment[assignment.id] ?? ""}
-                      onChange={(event) =>
-                        setEditingAssignment((prev) => ({
-                          ...prev,
-                          [assignment.id]: event.target.value,
-                        }))
-                      }
-                      placeholder="Rename"
-                    />
-                    <button
-                      className="rounded-full border border-slate-700 px-4 py-2 text-xs"
-                      type="button"
-                      onClick={() => void handleUpdateAssignment(assignment)}
-                    >
-                      Save
-                    </button>
-                    <button
-                      className="rounded-full border border-slate-700 px-4 py-2 text-xs"
-                      type="button"
-                      onClick={() => void handleToggleAssignmentPublish(assignment)}
-                    >
-                      Toggle publish
-                    </button>
-                    <button
-                      className="rounded-full border border-rose-500/40 px-4 py-2 text-xs text-rose-200"
-                      type="button"
-                      onClick={() => void handleDeleteAssignment(assignment)}
-                    >
-                      Delete
-                    </button>
-                  </div>
+                  {expandedAssignment[assignment.id] ? (
+                    <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                      <h3 className="text-sm font-semibold">Submissions</h3>
+                      <div className="mt-3 space-y-3">
+                        {(assignmentSubmissions[assignment.id] ?? []).map((submission) => (
+                          <div
+                            key={submission.id}
+                            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950/70 p-3"
+                          >
+                            <div>
+                              <p className="text-sm font-semibold">{submission.user?.name ?? "Student"}</p>
+                              <p className="text-xs text-slate-500">Submitted {submission.submitted_at}</p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <input
+                                className="w-20 rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs"
+                                type="number"
+                                min={0}
+                                value={gradingScore[submission.id] ?? submission.score ?? ""}
+                                onChange={(event) =>
+                                  setGradingScore((prev) => ({
+                                    ...prev,
+                                    [submission.id]: Number(event.target.value),
+                                  }))
+                                }
+                                placeholder="Score"
+                              />
+                              <button
+                                className="rounded-full border border-slate-700 px-3 py-1 text-xs"
+                                type="button"
+                                onClick={() =>
+                                  void handleGradeSubmission(assignment.id, submission.id)
+                                }
+                              >
+                                Grade
+                              </button>
+                              {submission.file_path ? (
+                                <a
+                                  className="text-xs text-lime-300"
+                                  href={submissionDownloadUrl(submission.id)}
+                                >
+                                  Download
+                                </a>
+                              ) : null}
+                            </div>
+                          </div>
+                        ))}
+                        {!(assignmentSubmissions[assignment.id] ?? []).length && (
+                          <p className="text-sm text-slate-400">No submissions yet.</p>
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               ))}
               {!(course?.assignments ?? []).length && (
@@ -1033,59 +1440,86 @@ export default function InstructorCourseDetailPage() {
 
             <div className="mt-6 space-y-3">
               {(course?.quizzes ?? []).map((quiz) => (
-                <div
-                  key={quiz.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3"
-                >
-                  <div>
-                    <p className="text-sm font-semibold">{quiz.title}</p>
-                    <p className="text-xs text-slate-500">
-                      {quiz.is_published ? "Published" : "Draft"}
-                    </p>
+                <div key={quiz.id} className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                    <div>
+                      <p className="text-sm font-semibold">{quiz.title}</p>
+                      <p className="text-xs text-slate-500">
+                        {quiz.is_published ? "Published" : "Draft"}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <input
+                        className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs"
+                        value={editingQuiz[quiz.id] ?? ""}
+                        onChange={(event) =>
+                          setEditingQuiz((prev) => ({
+                            ...prev,
+                            [quiz.id]: event.target.value,
+                          }))
+                        }
+                        placeholder="Rename"
+                      />
+                      <button
+                        className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                        type="button"
+                        onClick={() => void handleUpdateQuiz(quiz)}
+                      >
+                        Save
+                      </button>
+                      <button
+                        className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                        type="button"
+                        onClick={() => void handleToggleQuizPublish(quiz)}
+                      >
+                        Toggle publish
+                      </button>
+                      <button
+                        className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                        type="button"
+                        onClick={() => void toggleQuizQuestions(quiz)}
+                      >
+                        Questions
+                      </button>
+                      <button
+                        className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                        type="button"
+                        onClick={() => void toggleQuizAttempts(quiz)}
+                      >
+                        Attempts
+                      </button>
+                      <button
+                        className="rounded-full border border-rose-500/40 px-4 py-2 text-xs text-rose-200"
+                        type="button"
+                        onClick={() => void handleDeleteQuiz(quiz)}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <input
-                      className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs"
-                      value={editingQuiz[quiz.id] ?? ""}
-                      onChange={(event) =>
-                        setEditingQuiz((prev) => ({
-                          ...prev,
-                          [quiz.id]: event.target.value,
-                        }))
-                      }
-                      placeholder="Rename"
-                    />
-                    <button
-                      className="rounded-full border border-slate-700 px-4 py-2 text-xs"
-                      type="button"
-                      onClick={() => void handleUpdateQuiz(quiz)}
-                    >
-                      Save
-                    </button>
-                    <button
-                      className="rounded-full border border-slate-700 px-4 py-2 text-xs"
-                      type="button"
-                      onClick={() => void handleToggleQuizPublish(quiz)}
-                    >
-                      Toggle publish
-                    </button>
-                    <button
-                      className="rounded-full border border-slate-700 px-4 py-2 text-xs"
-                      type="button"
-                      onClick={() => void toggleQuizQuestions(quiz)}
-                    >
-                      Questions
-                    </button>
-                    <button
-                      className="rounded-full border border-rose-500/40 px-4 py-2 text-xs text-rose-200"
-                      type="button"
-                      onClick={() => void handleDeleteQuiz(quiz)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-                {expandedQuiz[quiz.id] ? (
+                  {expandedQuizAttempts[quiz.id] ? (
+                    <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                      <h3 className="text-sm font-semibold">Recent attempts</h3>
+                      <div className="mt-3 space-y-3">
+                        {(quizAttempts[quiz.id] ?? []).map((attempt) => (
+                          <div
+                            key={attempt.id}
+                            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950/70 p-3"
+                          >
+                            <div>
+                              <p className="text-sm font-semibold">{attempt.user?.name ?? "Student"}</p>
+                              <p className="text-xs text-slate-500">Completed {attempt.completed_at}</p>
+                            </div>
+                            <p className="text-xs text-slate-300">Score {attempt.score ?? "-"}</p>
+                          </div>
+                        ))}
+                        {!(quizAttempts[quiz.id] ?? []).length && (
+                          <p className="text-sm text-slate-400">No attempts yet.</p>
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
+                  {expandedQuiz[quiz.id] ? (
                   <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/60 p-4">
                     <h3 className="text-sm font-semibold">Quiz questions</h3>
                     <div className="mt-3 grid gap-3">
@@ -1121,6 +1555,7 @@ export default function InstructorCourseDetailPage() {
                               ...prev,
                               [quiz.id]: Number(event.target.value),
                             }))
+                          }
                           type="number"
                           min={1}
                         />
@@ -1154,6 +1589,63 @@ export default function InstructorCourseDetailPage() {
                         }
                         placeholder="Correct answer (comma separated)"
                       />
+                      {(() => {
+                        const type = questionType[quiz.id] ?? "multiple_choice";
+                        const options = parseCsvList(questionOptions[quiz.id] ?? "");
+                        const answers = parseCsvList(questionAnswer[quiz.id] ?? "");
+                        const message = validateQuestionConfig(type, options, answers);
+                        return message ? (
+                          <p className="text-xs text-amber-300">{message}</p>
+                        ) : null;
+                      })()}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <textarea
+                          className="min-h-[80px] flex-1 rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs"
+                          value={bulkInput[quiz.id] ?? ""}
+                          onChange={(event) =>
+                            setBulkInput((prev) => ({ ...prev, [quiz.id]: event.target.value }))
+                          }
+                          placeholder={
+                            "Bulk import: JSON array or lines like\nQuestion?|multiple_choice|1|A,B,C|A"
+                          }
+                        />
+                        <button
+                          className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                          type="button"
+                          onClick={() => void handleBulkImport(quiz)}
+                        >
+                          Import
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                        <label className="flex items-center gap-2">
+                          <span>Upload CSV/JSON</span>
+                          <input
+                            className="rounded-md border border-slate-800 bg-slate-950 px-2 py-1 text-xs"
+                            type="file"
+                            accept=".csv,.json,.txt"
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              if (file) {
+                                void handleBulkFileUpload(quiz, file);
+                              }
+                              event.currentTarget.value = "";
+                            }}
+                          />
+                        </label>
+                        <span>CSV columns: question_text, question_type, points, options, correct_answer</span>
+                        <span>Use semicolons in options/answers to avoid CSV commas.</span>
+                      </div>
+                      {bulkErrors[quiz.id]?.length ? (
+                        <div className="rounded-lg border border-amber-400/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-200">
+                          <p className="font-semibold">Import errors</p>
+                          <ul className="mt-1 list-disc space-y-1 pl-4">
+                            {bulkErrors[quiz.id].map((error) => (
+                              <li key={error}>{error}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
                     </div>
 
                     <div className="mt-4 space-y-2">
@@ -1247,6 +1739,24 @@ export default function InstructorCourseDetailPage() {
                                 }
                                 placeholder="Correct answer (comma separated)"
                               />
+                              {(() => {
+                                const type =
+                                  editingQuestionType[question.id] ?? question.question_type;
+                                const optionsValue =
+                                  editingQuestionOptions[question.id] ??
+                                  (question.options ? question.options.join(", ") : "");
+                                const answersValue =
+                                  editingQuestionAnswer[question.id] ??
+                                  (question.correct_answer ? question.correct_answer.join(", ") : "");
+                                const message = validateQuestionConfig(
+                                  type,
+                                  parseCsvList(optionsValue),
+                                  parseCsvList(answersValue)
+                                );
+                                return message ? (
+                                  <p className="md:col-span-2 text-xs text-amber-300">{message}</p>
+                                ) : null;
+                              })()}
                             </div>
                           </div>
                           <div className="flex flex-wrap gap-2">
@@ -1283,12 +1793,92 @@ export default function InstructorCourseDetailPage() {
                       )}
                     </div>
                   </div>
-                ) : null}
+                  ) : null}
+                </div>
               ))}
               {!(course?.quizzes ?? []).length && (
                 <p className="text-sm text-slate-400">No quizzes yet.</p>
               )}
             </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <h2 className="text-lg font-semibold">Resources</h2>
+          <form className="mt-4 grid gap-3" onSubmit={handleUploadResource}>
+            <div className="grid gap-3 md:grid-cols-2">
+              <input
+                className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm"
+                value={resourceTitle}
+                onChange={(event) => setResourceTitle(event.target.value)}
+                placeholder="Resource title"
+                required
+              />
+              <select
+                className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm"
+                value={resourceType}
+                onChange={(event) => setResourceType(event.target.value)}
+              >
+                <option value="file">File</option>
+                <option value="slides">Slides</option>
+                <option value="worksheet">Worksheet</option>
+              </select>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <select
+                className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm"
+                value={resourceLessonId}
+                onChange={(event) => setResourceLessonId(event.target.value)}
+              >
+                <option value="">Course-level resource</option>
+                {course?.modules?.flatMap((module) =>
+                  module.lessons?.map((lesson) => (
+                    <option key={lesson.id} value={lesson.id}>
+                      {module.title} · {lesson.title}
+                    </option>
+                  )) ?? []
+                )}
+              </select>
+              <input
+                className="text-sm"
+                type="file"
+                onChange={(event) => setResourceFile(event.target.files?.[0] ?? null)}
+                required
+              />
+            </div>
+            <label className="flex items-center gap-2 text-xs text-slate-400">
+              <input
+                type="checkbox"
+                checked={resourcePrivate}
+                onChange={(event) => setResourcePrivate(event.target.checked)}
+              />
+              Private to enrolled learners
+            </label>
+            <button
+              className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+              type="submit"
+              disabled={resourceUploading}
+            >
+              {resourceUploading ? "Uploading..." : "Upload resource"}
+            </button>
+          </form>
+
+          <div className="mt-4 space-y-3">
+            {resources.map((resource) => (
+              <div
+                key={resource.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3"
+              >
+                <div>
+                  <p className="text-sm font-semibold">{resource.title}</p>
+                  <p className="text-xs text-slate-500">{resource.type}</p>
+                </div>
+                <a className="text-xs text-lime-300" href={resourceDownloadUrl(resource.id)}>
+                  Download
+                </a>
+              </div>
+            ))}
+            {!resources.length && <p className="text-sm text-slate-400">No resources yet.</p>}
           </div>
         </section>
       </main>
