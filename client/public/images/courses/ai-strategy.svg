@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#312e81" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="600" fill="url(#bg)" />
+  <rect x="760" y="120" width="320" height="220" rx="24" fill="#111827" stroke="#818cf8" stroke-opacity="0.5" />
+  <text x="120" y="250" font-family="Space Grotesk, Arial, sans-serif" font-size="56" fill="#f8fafc">AI Product</text>
+  <text x="120" y="310" font-family="Space Grotesk, Arial, sans-serif" font-size="28" fill="#c7d2fe">Strategy Studio</text>
+</svg>

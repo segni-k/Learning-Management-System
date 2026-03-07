@@ -211,24 +211,66 @@ export default function CourseDetailPage() {
   return (
     <RequireAuth>
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-12 sm:px-6 sm:py-16">
-        <header className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Course Detail</p>
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-semibold sm:text-3xl">{course?.title ?? "Loading..."}</h1>
-              <p className="text-sm text-slate-400">{course?.description ?? ""}</p>
+        <header className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+          <div className="space-y-4">
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Course Detail</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge>{course?.status ?? "draft"}</Badge>
+              {course?.level ? <Badge className="border-amber-400/40 text-amber-200">{course.level}</Badge> : null}
+              {course?.instructor?.name ? (
+                <span className="text-xs text-slate-400">Instructor {course.instructor.name}</span>
+              ) : null}
             </div>
-            {user?.role === "student" ? (
-              <Button
-                type="button"
-                variant="primary"
-                className="px-5 py-2 text-xs"
-                onClick={() => void handleEnroll()}
-                disabled={isEnrolled || isEnrolling}
-              >
-                {isEnrolled ? "Enrolled" : isEnrolling ? "Enrolling..." : "Enroll"}
-              </Button>
-            ) : null}
+            <h1 className="text-3xl font-semibold sm:text-4xl">
+              {course?.title ?? "Loading..."}
+            </h1>
+            <p className="text-sm text-slate-400">{course?.description ?? ""}</p>
+            <div className="flex flex-wrap items-center gap-3">
+              {user?.role === "student" ? (
+                <Button
+                  type="button"
+                  variant="primary"
+                  className="px-5 py-2 text-xs"
+                  onClick={() => void handleEnroll()}
+                  disabled={isEnrolled || isEnrolling}
+                >
+                  {isEnrolled ? "Enrolled" : isEnrolling ? "Enrolling..." : "Enroll"}
+                </Button>
+              ) : null}
+              <Link className="text-xs text-amber-300" href="/courses">
+                Back to catalog
+              </Link>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Card className="p-3">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Modules</p>
+                <p className="text-lg font-semibold">{course?.modules?.length ?? 0}</p>
+              </Card>
+              <Card className="p-3">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Lessons</p>
+                <p className="text-lg font-semibold">
+                  {course?.modules?.reduce((total, module) => total + (module.lessons?.length ?? 0), 0) ?? 0}
+                </p>
+              </Card>
+              <Card className="p-3">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Assessments</p>
+                <p className="text-lg font-semibold">
+                  {(courseAssignments?.length ?? 0) + (courseQuizzes?.length ?? 0)}
+                </p>
+              </Card>
+            </div>
+          </div>
+          <div className="relative">
+            <div className="absolute -inset-6 rounded-3xl bg-amber-400/10 blur-3xl" />
+            <div className="relative overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-950/70">
+              <img
+                src={course?.thumbnail_path || "/images/courses/default.svg"}
+                alt={course?.title ?? "Course"}
+                className="h-[280px] w-full object-cover"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
+            </div>
           </div>
         </header>
 

@@ -75,9 +75,18 @@ export default function CoursesPage() {
             {courses.map((course) => {
               const enrollment = enrollmentMap.get(course.id);
               const isEnrolled = Boolean(enrollment);
+              const thumbnail = course.thumbnail_path || "/images/courses/default.svg";
               return (
                 <Card key={course.id} className="p-5">
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="overflow-hidden rounded-xl border border-slate-800/80 bg-slate-950/70">
+                    <img
+                      src={thumbnail}
+                      alt={course.title}
+                      className="h-40 w-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="mt-4 flex items-start justify-between gap-3">
                     <div>
                       <h2 className="text-lg font-semibold">{course.title}</h2>
                       <p className="text-xs text-slate-500">{course.level ?? ""}</p>
