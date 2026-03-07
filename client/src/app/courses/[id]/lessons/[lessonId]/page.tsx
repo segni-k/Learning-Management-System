@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { RequireAuth } from "@/components/require-auth";
 import { getCourse } from "@/lib/courses";
 import { listEnrollments } from "@/lib/enrollments";
@@ -213,11 +214,13 @@ export default function LessonPlayerPage() {
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-12 sm:px-6 sm:py-16">
         <header className="grid gap-4 lg:grid-cols-[140px_1fr] lg:items-center fade-rise">
           <div className="relative h-28 w-full overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-950/70 sm:h-32 lg:h-28 lg:w-36">
-            <img
+            <Image
               src={course?.thumbnail_path || "/images/courses/default.svg"}
               alt={course?.title ?? "Course"}
+              width={320}
+              height={224}
+              sizes="(max-width: 1024px) 100vw, 144px"
               className="h-full w-full object-cover float-slow"
-              loading="lazy"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
           </div>

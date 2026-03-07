@@ -43,7 +43,10 @@ class StudentCourseDashboardController extends Controller
             ->first();
 
         $resume = LessonProgress::query()
-            ->with(['lesson.module'])
+            ->with([
+                'lesson:id,module_id,title',
+                'lesson.module:id,course_id,title',
+            ])
             ->where('user_id', $user->id)
             ->whereIn('lesson_id', $lessonIds)
             ->where('status', 'in_progress')
@@ -56,7 +59,18 @@ class StudentCourseDashboardController extends Controller
         $modulesPerPage = min((int) $request->query('modules_per_page', 10), 100);
 
         $upcomingAssignments = Assignment::query()
-            ->with(['lesson'])
+            ->select([
+                'id',
+                'course_id',
+                'lesson_id',
+                'title',
+                'description',
+                'due_at',
+                'max_points',
+                'is_published',
+                'created_at',
+            ])
+            ->with(['lesson:id,module_id,title'])
             ->where('course_id', $course->id)
             ->where('is_published', '=', DB::raw('true'))
             ->whereNotNull('due_at')
@@ -66,7 +80,18 @@ class StudentCourseDashboardController extends Controller
             ->get();
 
         $recentQuizzes = Quiz::query()
-            ->with(['lesson'])
+            ->select([
+                'id',
+                'course_id',
+                'lesson_id',
+                'title',
+                'description',
+                'time_limit_minutes',
+                'max_attempts',
+                'is_published',
+                'created_at',
+            ])
+            ->with(['lesson:id,module_id,title'])
             ->where('course_id', $course->id)
             ->where('is_published', '=', DB::raw('true'))
             ->latest()

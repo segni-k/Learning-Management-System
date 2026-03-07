@@ -219,9 +219,10 @@ class DatabaseSeeder extends Seeder
                 if ($lessonCount < 3) {
                     $start = $lessonCount + 1;
                     $target = 3 - $lessonCount;
+                    $moduleId = (int) $module->getKey();
                     for ($l = 0; $l < $target; $l++) {
                         Lesson::create([
-                            'module_id' => $module->id,
+                            'module_id' => $moduleId,
                             'title' => "Lesson ".($start + $l).": ".fake()->words(3, true),
                             'content' => fake()->paragraphs(3, true),
                             'video_url' => fake()->randomElement([

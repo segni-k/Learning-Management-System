@@ -15,7 +15,20 @@ class CourseController extends Controller
     {
         $user = $request->user();
 
-        $query = Course::query()->with('instructor');
+        $query = Course::query()
+            ->select([
+                'id',
+                'title',
+                'slug',
+                'description',
+                'level',
+                'status',
+                'published_at',
+                'thumbnail_path',
+                'instructor_id',
+                'created_at',
+            ])
+            ->with(['instructor:id,name,email']);
 
         if ($user?->isAdmin()) {
             return response()->json(['data' => $query->latest()->get()]);
@@ -43,7 +56,51 @@ class CourseController extends Controller
             }
         }
 
-        $course->load(['instructor', 'modules.lessons', 'assignments', 'quizzes']);
+        $course->load([
+            'instructor:id,name,email',
+            'modules' => function ($query) {
+                $query->select(['id', 'course_id', 'title', 'description', 'takeaways', 'sort_order'])
+                    ->orderBy('sort_order');
+            },
+            'modules.lessons' => function ($query) {
+                $query->select([
+                    'id',
+                    'module_id',
+                    'title',
+                    'content',
+                    'video_url',
+                    'duration_seconds',
+                    'sort_order',
+                    'is_published',
+                ])->orderBy('sort_order');
+            },
+            'assignments' => function ($query) {
+                $query->select([
+                    'id',
+                    'course_id',
+                    'lesson_id',
+                    'title',
+                    'description',
+                    'due_at',
+                    'max_points',
+                    'is_published',
+                    'created_at',
+                ])->orderBy('due_at');
+            },
+            'quizzes' => function ($query) {
+                $query->select([
+                    'id',
+                    'course_id',
+                    'lesson_id',
+                    'title',
+                    'description',
+                    'time_limit_minutes',
+                    'max_attempts',
+                    'is_published',
+                    'created_at',
+                ])->orderByDesc('created_at');
+            },
+        ]);
 
         return response()->json(['data' => $course]);
     }

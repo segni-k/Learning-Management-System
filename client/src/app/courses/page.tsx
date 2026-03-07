@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { RequireAuth } from "@/components/require-auth";
 import { listCourses } from "@/lib/courses";
@@ -79,11 +80,13 @@ export default function CoursesPage() {
               return (
                 <Card key={course.id} className="p-5">
                   <div className="overflow-hidden rounded-xl border border-slate-800/80 bg-slate-950/70">
-                    <img
+                    <Image
                       src={thumbnail}
                       alt={course.title}
+                      width={960}
+                      height={384}
+                      sizes="(max-width: 768px) 100vw, 50vw"
                       className="h-40 w-full object-cover"
-                      loading="lazy"
                     />
                   </div>
                   <div className="mt-4 flex items-start justify-between gap-3">

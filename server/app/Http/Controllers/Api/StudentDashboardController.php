@@ -20,7 +20,11 @@ class StudentDashboardController extends Controller
         }
 
         $enrollments = Enrollment::query()
-            ->with('course.instructor')
+            ->select(['id', 'course_id', 'user_id', 'enrolled_at'])
+            ->with([
+                'course:id,title,status,instructor_id',
+                'course.instructor:id,name,email',
+            ])
             ->where('user_id', $user->id)
             ->latest()
             ->get();
