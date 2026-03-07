@@ -1,5 +1,8 @@
 import { API_BASE_URL } from "./api";
 
+const shouldIncludeParam = (value: unknown) =>
+  value !== undefined && value !== null && (typeof value !== "string" || value !== "");
+
 export function adminEnrollmentsExportUrl(params?: {
   course_id?: number;
   from?: string;
@@ -7,7 +10,7 @@ export function adminEnrollmentsExportUrl(params?: {
 }) {
   const search = new URLSearchParams();
   Object.entries(params ?? {}).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
+    if (shouldIncludeParam(value)) {
       search.set(key, String(value));
     }
   });
@@ -18,7 +21,7 @@ export function adminEnrollmentsExportUrl(params?: {
 export function adminProgressExportUrl(params?: { course_id?: number }) {
   const search = new URLSearchParams();
   Object.entries(params ?? {}).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
+    if (shouldIncludeParam(value)) {
       search.set(key, String(value));
     }
   });
@@ -33,7 +36,7 @@ export function instructorSubmissionsExportUrl(params?: {
 }) {
   const search = new URLSearchParams();
   Object.entries(params ?? {}).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
+    if (shouldIncludeParam(value)) {
       search.set(key, String(value));
     }
   });
@@ -48,7 +51,7 @@ export function instructorAttemptsExportUrl(params?: {
 }) {
   const search = new URLSearchParams();
   Object.entries(params ?? {}).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
+    if (shouldIncludeParam(value)) {
       search.set(key, String(value));
     }
   });

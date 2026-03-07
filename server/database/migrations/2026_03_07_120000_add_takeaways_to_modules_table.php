@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    public $withinTransaction = false;
+
     public function up(): void
     {
         if (! Schema::hasTable('modules') || Schema::hasColumn('modules', 'takeaways')) {
@@ -13,7 +15,7 @@ return new class extends Migration
         }
 
         Schema::table('modules', function (Blueprint $table) {
-            $table->json('takeaways')->nullable()->after('description');
+            $table->json('takeaways')->nullable();
         });
     }
 

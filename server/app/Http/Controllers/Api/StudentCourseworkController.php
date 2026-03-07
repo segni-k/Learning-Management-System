@@ -9,6 +9,7 @@ use App\Models\Enrollment;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class StudentCourseworkController extends Controller
 {
@@ -16,7 +17,7 @@ class StudentCourseworkController extends Controller
     {
         $user = $request->user();
 
-        if (! $user?->isStudent() && ! $user?->isAdmin()) {
+        if (! $user || (! $user->isStudent() && ! $user->isAdmin())) {
             abort(403, 'Students only.');
         }
 
@@ -26,7 +27,9 @@ class StudentCourseworkController extends Controller
 
         $courseId = $request->query('course_id');
         if ($courseId) {
-            $courseIds = $courseIds->filter(fn ($id) => (int) $id === (int) $courseId);
+            $courseIds = $courseIds->filter(function ($id) use ($courseId) {
+                return (int) $id === (int) $courseId;
+            });
         }
 
         $assignmentsPage = (int) $request->query('assignments_page', 1);
@@ -38,7 +41,7 @@ class StudentCourseworkController extends Controller
         $assignmentsQuery = Assignment::query()
             ->with(['course', 'lesson'])
             ->whereIn('course_id', $courseIds)
-            ->where('is_published', true)
+            ->where('is_published', '=', DB::raw('true'))
             ->leftJoin('assignment_submissions as submissions', function ($join) use ($user) {
                 $join->on('assignments.id', '=', 'submissions.assignment_id')
                     ->where('submissions.user_id', $user->id);
@@ -93,8 +96,8 @@ class StudentCourseworkController extends Controller
             return [
                 'id' => $assignment->id,
                 'title' => $assignment->title,
-                'course' => $assignment->course?->only(['id', 'title']),
-                'lesson' => $assignment->lesson?->only(['id', 'title']),
+                'course' => $assignment->course ? $assignment->course->only(['id', 'title']) : null,
+                'lesson' => $assignment->lesson ? $assignment->lesson->only(['id', 'title']) : null,
                 'due_at' => $assignment->due_at,
                 'is_published' => $assignment->is_published,
                 'status' => $hasSubmission ? ($gradedAt ? 'graded' : 'submitted') : 'pending',
@@ -108,36 +111,33 @@ class StudentCourseworkController extends Controller
         $quizzesPerPage = min((int) $request->query('quizzes_per_page', 20), 100);
         $quizStatus = $request->query('quiz_status');
 
+        $attemptsUsedSub = QuizAttempt::query()
+            ->selectRaw('count(*)')
+            ->whereColumn('quiz_attempts.quiz_id', 'quizzes.id')
+            ->where('quiz_attempts.user_id', $user->id);
+
+        $lastScoreSub = QuizAttempt::query()
+            ->select('score')
+            ->whereColumn('quiz_attempts.quiz_id', 'quizzes.id')
+            ->where('quiz_attempts.user_id', $user->id)
+            ->orderByDesc('completed_at')
+            ->limit(1);
+
+        $lastAttemptedSub = QuizAttempt::query()
+            ->select('completed_at')
+            ->whereColumn('quiz_attempts.quiz_id', 'quizzes.id')
+            ->where('quiz_attempts.user_id', $user->id)
+            ->orderByDesc('completed_at')
+            ->limit(1);
+
         $quizzesQuery = Quiz::query()
             ->with(['course', 'lesson'])
             ->whereIn('course_id', $courseIds)
-            ->where('is_published', true)
+            ->where('is_published', '=', DB::raw('true'))
             ->select('quizzes.*')
-            ->selectSub(
-                QuizAttempt::query()
-                    ->selectRaw('count(*)')
-                    ->whereColumn('quiz_attempts.quiz_id', 'quizzes.id')
-                    ->where('quiz_attempts.user_id', $user->id),
-                'attempts_used'
-            )
-            ->selectSub(
-                QuizAttempt::query()
-                    ->select('score')
-                    ->whereColumn('quiz_attempts.quiz_id', 'quizzes.id')
-                    ->where('quiz_attempts.user_id', $user->id)
-                    ->orderByDesc('completed_at')
-                    ->limit(1),
-                'last_score'
-            )
-            ->selectSub(
-                QuizAttempt::query()
-                    ->select('completed_at')
-                    ->whereColumn('quiz_attempts.quiz_id', 'quizzes.id')
-                    ->where('quiz_attempts.user_id', $user->id)
-                    ->orderByDesc('completed_at')
-                    ->limit(1),
-                'last_attempted_at'
-            );
+            ->selectSub($attemptsUsedSub, 'attempts_used')
+            ->selectSub($lastScoreSub, 'last_score')
+            ->selectSub($lastAttemptedSub, 'last_attempted_at');
 
         if ($courseId) {
             $quizzesQuery->where('quizzes.course_id', $courseId);
@@ -164,41 +164,49 @@ class StudentCourseworkController extends Controller
 
         $quizzesData = $quizzesPageData->getCollection()->map(function (Quiz $quiz) {
             $attemptCount = (int) ($quiz->getAttribute('attempts_used') ?? 0);
-            $remainingAttempts = $quiz->max_attempts ? max($quiz->max_attempts - $attemptCount, 0) : null;
+            $remainingAttempts = $quiz->max_attempts
+                ? max($quiz->max_attempts - $attemptCount, 0)
+                : null;
 
-            return [
+            $course = $quiz->course ? $quiz->course->only(array('id', 'title')) : null;
+            $lesson = $quiz->lesson ? $quiz->lesson->only(array('id', 'title')) : null;
+            $status = $attemptCount > 0 ? 'attempted' : 'not_started';
+
+            return array(
                 'id' => $quiz->id,
                 'title' => $quiz->title,
-                'course' => $quiz->course?->only(['id', 'title']),
-                'lesson' => $quiz->lesson?->only(['id', 'title']),
+                'course' => $course,
+                'lesson' => $lesson,
                 'max_attempts' => $quiz->max_attempts,
                 'attempts_used' => $attemptCount,
                 'attempts_remaining' => $remainingAttempts,
                 'last_score' => $quiz->getAttribute('last_score'),
                 'last_attempted_at' => $quiz->getAttribute('last_attempted_at'),
-                'status' => $attemptCount > 0 ? 'attempted' : 'not_started',
-            ];
+                'status' => $status,
+            );
         });
 
-        return response()->json([
-            'data' => [
+        $response = array(
+            'data' => array(
                 'assignments' => $assignmentsData,
-                'quizzes' => $quizzesData,
-            ],
-            'meta' => [
-                'assignments' => [
+                'quizzes' => $quizzesData
+            ),
+            'meta' => array(
+                'assignments' => array(
                     'current_page' => $assignmentsPageData->currentPage(),
                     'per_page' => $assignmentsPageData->perPage(),
                     'total' => $assignmentsPageData->total(),
-                    'last_page' => $assignmentsPageData->lastPage(),
-                ],
-                'quizzes' => [
+                    'last_page' => $assignmentsPageData->lastPage()
+                ),
+                'quizzes' => array(
                     'current_page' => $quizzesPageData->currentPage(),
                     'per_page' => $quizzesPageData->perPage(),
                     'total' => $quizzesPageData->total(),
-                    'last_page' => $quizzesPageData->lastPage(),
-                ],
-            ],
-        ]);
+                    'last_page' => $quizzesPageData->lastPage()
+                )
+            )
+        );
+
+        return response()->json($response);
     }
 }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import {
   createLesson,
   createModule,
@@ -849,7 +850,7 @@ export default function InstructorCourseDetailPage() {
   };
 
   const handleQuestionDragStart = (
-    event: React.DragEvent<HTMLDivElement>,
+    event: React.DragEvent<HTMLElement>,
     quizId: number,
     questionId: number
   ) => {
@@ -858,7 +859,7 @@ export default function InstructorCourseDetailPage() {
   };
 
   const handleQuestionDrop = async (
-    event: React.DragEvent<HTMLDivElement>,
+    event: React.DragEvent<HTMLElement>,
     quizId: number,
     targetId: number
   ) => {
@@ -922,12 +923,12 @@ export default function InstructorCourseDetailPage() {
     return ids.map((id) => map.get(id)).filter(Boolean) as Lesson[];
   };
 
-  const handleModuleDragStart = (event: React.DragEvent<HTMLDivElement>, moduleId: number) => {
+  const handleModuleDragStart = (event: React.DragEvent<HTMLElement>, moduleId: number) => {
     event.dataTransfer.setData("text/plain", `module:${moduleId}`);
     setDraggingModuleId(moduleId);
   };
 
-  const handleModuleDrop = async (event: React.DragEvent<HTMLDivElement>, targetId: number) => {
+  const handleModuleDrop = async (event: React.DragEvent<HTMLElement>, targetId: number) => {
     event.preventDefault();
     const payload = event.dataTransfer.getData("text/plain");
     if (!payload.startsWith("module:")) return;
@@ -954,7 +955,7 @@ export default function InstructorCourseDetailPage() {
   };
 
   const handleLessonDragStart = (
-    event: React.DragEvent<HTMLDivElement>,
+    event: React.DragEvent<HTMLElement>,
     moduleId: number,
     lessonId: number
   ) => {
@@ -963,7 +964,7 @@ export default function InstructorCourseDetailPage() {
   };
 
   const handleLessonDrop = async (
-    event: React.DragEvent<HTMLDivElement>,
+    event: React.DragEvent<HTMLElement>,
     module: Module,
     targetId: number
   ) => {

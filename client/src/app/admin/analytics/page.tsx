@@ -49,8 +49,8 @@ export default function AdminAnalyticsPage() {
           <section className="grid gap-4 md:grid-cols-5">
             <Stat label="Courses" value={overview.courses_total} />
             <Stat label="Published" value={overview.courses_published} />
-            <Stat label="Students" value={overview.students_total} />
-            <Stat label="Instructors" value={overview.instructors_total} />
+            <Stat label="Students" value={overview.students_total ?? 0} />
+            <Stat label="Instructors" value={overview.instructors_total ?? 0} />
             <Stat label="Completion" value={`${overview.completion_rate}%`} />
           </section>
         ) : null}

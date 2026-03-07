@@ -17,6 +17,7 @@ use App\Models\Resource;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
@@ -28,6 +29,20 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->seedAdmin();
+        [$instructors, $students] = $this->seedUsers();
+        $courseBlueprints = $this->courseBlueprints();
+        $videoUrls = $this->videoUrls();
+        [$courseLessons, $courseAssignments, $courseQuizzes] = $this->seedCourses(
+            $courseBlueprints,
+            $videoUrls,
+            $instructors
+        );
+        $this->seedEnrollments($students, $courseLessons, $courseAssignments, $courseQuizzes);
+    }
+
+    private function seedAdmin(): void
+    {
         User::updateOrCreate(
             ['email' => 'admin@atlas.test'],
             [
@@ -36,7 +51,10 @@ class DatabaseSeeder extends Seeder
                 'password' => Hash::make('password'),
             ]
         );
+    }
 
+    private function seedUsers(): array
+    {
         $instructorData = [
             ['name' => 'Avery Wright', 'email' => 'instructor@atlas.test'],
             ['name' => 'Jordan Lee', 'email' => 'jordan.lee@atlas.test'],
@@ -75,13 +93,21 @@ class DatabaseSeeder extends Seeder
             );
         });
 
-        $videoUrls = [
+        return [$instructors, $students];
+    }
+
+    private function videoUrls(): array
+    {
+        return [
             'https://www.youtube.com/embed/ysz5S6PUM-U',
             'https://www.youtube.com/embed/jNQXAC9IVRw',
             'https://www.youtube.com/embed/k3oJf0kEEm0',
         ];
+    }
 
-        $courseBlueprints = [
+    private function courseBlueprints(): array
+    {
+        return [
             [
                 'title' => 'Product Design Foundations',
                 'slug' => 'product-design-foundations',
@@ -125,7 +151,10 @@ class DatabaseSeeder extends Seeder
                 'thumbnail_path' => '/images/courses/growth-engine.svg',
             ],
         ];
+    }
 
+    private function seedCourses(array $courseBlueprints, array $videoUrls, $instructors): array
+    {
         $courseLessons = [];
         $courseAssignments = [];
         $courseQuizzes = [];
@@ -285,7 +314,7 @@ class DatabaseSeeder extends Seeder
                 'uploaded_by' => $course->instructor_id,
                 'type' => 'file',
                 'path' => 'resources/seed/course-syllabus.pdf',
-                'is_private' => true,
+                'is_private' => DB::raw('true'),
             ]);
 
             Resource::firstOrCreate([
@@ -296,7 +325,7 @@ class DatabaseSeeder extends Seeder
                 'uploaded_by' => $course->instructor_id,
                 'type' => 'image',
                 'path' => 'resources/seed/course-cover.svg',
-                'is_private' => false,
+                'is_private' => DB::raw('false'),
             ]);
 
             $course->modules->each(function (Module $module) use ($course) {
@@ -313,7 +342,7 @@ class DatabaseSeeder extends Seeder
                     'uploaded_by' => $course->instructor_id,
                     'type' => 'worksheet',
                     'path' => 'resources/seed/lesson-worksheet.pdf',
-                    'is_private' => true,
+                    'is_private' => DB::raw('true'),
                 ]);
             });
 
@@ -322,6 +351,11 @@ class DatabaseSeeder extends Seeder
             $courseQuizzes[$course->id] = $quizzes;
         }
 
+        return [$courseLessons, $courseAssignments, $courseQuizzes];
+    }
+
+    private function seedEnrollments($students, array $courseLessons, array $courseAssignments, array $courseQuizzes): void
+    {
         foreach ($students as $student) {
             $enrolledCourses = collect($courseLessons)->keys()->random(fake()->numberBetween(2, 3));
             foreach ($enrolledCourses as $courseId) {
@@ -400,7 +434,7 @@ class DatabaseSeeder extends Seeder
                                 'quiz_attempt_id' => $attempt->id,
                                 'quiz_question_id' => $question->id,
                                 'answer' => $answer,
-                                'is_correct' => $isCorrect,
+                                'is_correct' => DB::raw($isCorrect ? 'true' : 'false'),
                                 'points_awarded' => $pointsAwarded,
                             ]);
                         }

@@ -5,6 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int $module_id
+ * @property string $title
+ * @property string|null $content
+ * @property string|null $video_url
+ * @property int|null $duration_seconds
+ * @property int $sort_order
+ * @property bool $is_published
+ */
 class Lesson extends Model
 {
     use HasFactory;

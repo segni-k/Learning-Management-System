@@ -67,7 +67,7 @@ class StudentDashboardController extends Controller
         $upcomingAssignments = Assignment::query()
             ->with(['course', 'lesson'])
             ->whereIn('course_id', $courseIds)
-            ->where('is_published', true)
+            ->where('is_published', '=', DB::raw('true'))
             ->whereNotNull('due_at')
             ->where('due_at', '>=', now())
             ->orderBy('due_at')
@@ -77,7 +77,7 @@ class StudentDashboardController extends Controller
         $availableQuizzes = Quiz::query()
             ->with(['course', 'lesson'])
             ->whereIn('course_id', $courseIds)
-            ->where('is_published', true)
+            ->where('is_published', '=', DB::raw('true'))
             ->latest()
             ->limit(10)
             ->get();
