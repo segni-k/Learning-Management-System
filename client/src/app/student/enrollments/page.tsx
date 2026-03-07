@@ -27,7 +27,7 @@ export default function StudentEnrollmentsPage() {
 
   return (
     <RequireAuth>
-      <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-16">
+      <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-12 sm:px-6 sm:py-16">
         <header className="space-y-2">
           <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Student</p>
           <h1 className="text-3xl font-semibold">My enrollments</h1>
@@ -49,7 +49,15 @@ export default function StudentEnrollmentsPage() {
               </Card>
             ))}
             {!enrollments.length && (
-              <p className="text-sm text-slate-400">No enrollments yet.</p>
+              <div className="rounded-xl border border-dashed border-slate-800/80 bg-slate-950/60 p-5">
+                <p className="text-sm text-slate-200">No enrollments yet.</p>
+                <p className="mt-2 text-xs text-slate-400">
+                  Head to the course catalog to enroll.
+                </p>
+                <Link className="mt-3 inline-flex text-xs text-amber-300" href="/courses">
+                  Browse courses
+                </Link>
+              </div>
             )}
           </div>
         </Panel>

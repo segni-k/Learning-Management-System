@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { RequireAuth } from "@/components/require-auth";
@@ -85,19 +85,22 @@ export default function LessonPlayerPage() {
     return /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
   }, [lesson]);
 
-  const handleSaveProgress = async (nextStatus: "in_progress" | "completed") => {
-    if (!lesson) return;
-    try {
-      await upsertLessonProgress({
-        lesson_id: lesson.id,
-        status: nextStatus,
-        progress_percent: nextStatus === "completed" ? 100 : safeProgress,
-      });
-      setStatus("Progress saved.");
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Failed to update progress");
-    }
-  };
+  const handleSaveProgress = useCallback(
+    async (nextStatus: "in_progress" | "completed") => {
+      if (!lesson) return;
+      try {
+        await upsertLessonProgress({
+          lesson_id: lesson.id,
+          status: nextStatus,
+          progress_percent: nextStatus === "completed" ? 100 : safeProgress,
+        });
+        setStatus("Progress saved.");
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : "Failed to update progress");
+      }
+    },
+    [lesson, safeProgress]
+  );
 
   useEffect(() => {
     if (!lesson || isManualProgress) return;
@@ -127,7 +130,7 @@ export default function LessonPlayerPage() {
     }, 2000);
 
     return () => window.clearTimeout(timeout);
-  }, [lesson, safeProgress, lastSavedProgress]);
+  }, [lesson, safeProgress, lastSavedProgress, handleSaveProgress]);
 
   const handleVideoTimeUpdate = (event: React.SyntheticEvent<HTMLVideoElement>) => {
     if (isManualProgress) return;

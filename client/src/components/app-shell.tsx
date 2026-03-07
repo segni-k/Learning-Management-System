@@ -25,6 +25,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link className="text-slate-200 hover:text-white" href="/dashboard">
               Dashboard
             </Link>
+            <Link className="text-slate-300 hover:text-white" href="/courses">
+              Courses
+            </Link>
             {user?.role === "student" ? (
               <Link className="text-slate-300 hover:text-white" href="/student/coursework">
                 Coursework

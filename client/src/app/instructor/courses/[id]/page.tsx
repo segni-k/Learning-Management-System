@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   createLesson,
@@ -132,7 +132,7 @@ export default function InstructorCourseDetailPage() {
 
   const moduleCount = useMemo(() => course?.modules?.length ?? 0, [course]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!id || Number.isNaN(id)) return;
 
     try {
@@ -156,11 +156,11 @@ export default function InstructorCourseDetailPage() {
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Failed to load course");
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     void load();
-  }, [id]);
+  }, [load]);
 
   const handleCreateModule = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -1872,7 +1872,7 @@ export default function InstructorCourseDetailPage() {
                 <p className="text-sm text-slate-400">No quizzes yet.</p>
               )}
             </div>
-          </div>
+          </Panel>
         </section>
 
         <Panel>

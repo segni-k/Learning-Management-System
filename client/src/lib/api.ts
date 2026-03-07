@@ -1,6 +1,13 @@
 const DEFAULT_API_BASE_URL = "http://localhost:8000";
 
-export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL).replace(/\/$/, "");
+const runtimeBaseUrl =
+  typeof window !== "undefined"
+    ? `${window.location.protocol}//${window.location.hostname}:8000`
+    : DEFAULT_API_BASE_URL;
+
+export const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? runtimeBaseUrl ?? DEFAULT_API_BASE_URL
+).replace(/\/$/, "");
 
 function getCookieValue(name: string): string | null {
   if (typeof document === "undefined") {
@@ -53,7 +60,7 @@ export async function apiJson<T>(path: string, init: RequestInit = {}): Promise<
   const data = text ? JSON.parse(text) : null;
 
   if (!response.ok) {
-    const message = data?.message ?? "Request failed";
+    const message = data?.message ?? `Request failed (${response.status})`;
     throw new Error(message);
   }
 

@@ -24,7 +24,7 @@ import type {
 } from "@/lib/types";
 
 export default function DashboardPage() {
-  const { user, loading, logout } = useAuth();
+  const { user, logout } = useAuth();
   const [overview, setOverview] = useState<StudentDashboardOverview | null>(null);
   const [notifications, setNotifications] = useState<StudentNotifications | null>(null);
   const [activity, setActivity] = useState<StudentActivity | null>(null);
@@ -115,7 +115,15 @@ export default function DashboardPage() {
               </Card>
             ))}
             {!(overview?.courses ?? []).length && (
-              <p className="text-sm text-slate-400">No enrolled courses yet.</p>
+              <div className="rounded-xl border border-dashed border-slate-800/80 bg-slate-950/60 p-5">
+                <p className="text-sm text-slate-200">No enrolled courses yet.</p>
+                <p className="mt-2 text-xs text-slate-400">
+                  Browse the catalog to enroll and start learning.
+                </p>
+                <Link className="mt-3 inline-flex text-xs text-amber-300" href="/courses">
+                  Explore courses
+                </Link>
+              </div>
             )}
           </div>
         </Panel>
