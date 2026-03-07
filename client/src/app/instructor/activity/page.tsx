@@ -37,7 +37,7 @@ export default function InstructorActivityPage() {
         {status && <p className="text-sm text-rose-300">{status}</p>}
 
         <section className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <div className="glass-panel rounded-2xl p-6">
             <h2 className="text-lg font-semibold">Submissions</h2>
             <div className="mt-4 space-y-3">
               {(activity?.assignment_submissions ?? []).map((item) => (
@@ -54,7 +54,7 @@ export default function InstructorActivityPage() {
               )}
             </div>
           </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <div className="glass-panel rounded-2xl p-6">
             <h2 className="text-lg font-semibold">Quiz attempts</h2>
             <div className="mt-4 space-y-3">
               {(activity?.quiz_attempts ?? []).map((item) => (

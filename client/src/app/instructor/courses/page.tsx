@@ -55,10 +55,7 @@ export default function InstructorCoursesPage() {
           <p className="text-sm text-slate-400">Create and manage your courses.</p>
         </header>
 
-        <form
-          onSubmit={handleCreate}
-          className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6"
-        >
+        <form onSubmit={handleCreate} className="glass-panel rounded-2xl p-6">
           <div className="grid gap-4 md:grid-cols-2">
             <label className="grid gap-2 text-sm">
               Course title
@@ -79,7 +76,7 @@ export default function InstructorCoursesPage() {
             </label>
           </div>
           <button
-            className="mt-4 rounded-full bg-lime-300 px-5 py-2 text-sm font-semibold text-slate-900"
+            className="mt-4 rounded-full bg-amber-400 px-5 py-2 text-sm font-semibold text-slate-900"
             type="submit"
             disabled={creating}
           >
@@ -88,18 +85,18 @@ export default function InstructorCoursesPage() {
           {status && <p className="mt-3 text-sm text-rose-300">{status}</p>}
         </form>
 
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+        <section className="glass-panel rounded-2xl p-6">
           <h2 className="text-lg font-semibold">Your courses</h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {courses.map((course) => (
-              <article key={course.id} className="rounded-xl border border-slate-800 bg-slate-950/80 p-4">
+              <article key={course.id} className="rounded-xl border border-slate-800/80 bg-slate-950/80 p-4">
                 <h3 className="text-lg font-semibold">{course.title}</h3>
                 <p className="mt-2 text-sm text-slate-400 line-clamp-2">
                   {course.description ?? "No description yet."}
                 </p>
                 <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
                   <span className="uppercase tracking-[0.2em]">{course.status}</span>
-                  <Link className="text-lime-300" href={`/instructor/courses/${course.id}`}>
+                  <Link className="text-amber-300" href={`/instructor/courses/${course.id}`}>
                     Manage
                   </Link>
                 </div>

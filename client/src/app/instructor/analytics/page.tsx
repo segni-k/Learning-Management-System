@@ -48,26 +48,26 @@ export default function InstructorAnalyticsPage() {
 
         {overview ? (
           <section className="grid gap-4 md:grid-cols-4">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+            <div className="glass-panel rounded-2xl p-5">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Courses</p>
               <p className="text-2xl font-semibold">{overview.courses_total}</p>
             </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+            <div className="glass-panel rounded-2xl p-5">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Published</p>
               <p className="text-2xl font-semibold">{overview.courses_published}</p>
             </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+            <div className="glass-panel rounded-2xl p-5">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Enrollments</p>
               <p className="text-2xl font-semibold">{overview.enrollments_total}</p>
             </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+            <div className="glass-panel rounded-2xl p-5">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Completion</p>
               <p className="text-2xl font-semibold">{overview.completion_rate}%</p>
             </div>
           </section>
         ) : null}
 
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+        <section className="glass-panel rounded-2xl p-6">
           <h2 className="text-lg font-semibold">Exports</h2>
           <div className="mt-4 flex flex-wrap items-end gap-3">
             <label className="grid gap-1 text-xs text-slate-400">
@@ -80,7 +80,7 @@ export default function InstructorAnalyticsPage() {
               />
             </label>
             <a
-              className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+              className="rounded-full border border-slate-700/80 px-4 py-2 text-xs"
               href={instructorSubmissionsExportUrl({
                 course_id: courseId ? Number(courseId) : undefined,
               })}
@@ -88,7 +88,7 @@ export default function InstructorAnalyticsPage() {
               Download submissions CSV
             </a>
             <a
-              className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+              className="rounded-full border border-slate-700/80 px-4 py-2 text-xs"
               href={instructorAttemptsExportUrl({
                 course_id: courseId ? Number(courseId) : undefined,
               })}
@@ -98,11 +98,11 @@ export default function InstructorAnalyticsPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+        <section className="glass-panel rounded-2xl p-6">
           <h2 className="text-lg font-semibold">Course breakdown</h2>
           <div className="mt-4 space-y-3">
             {courses.map((course) => (
-              <div key={course.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+              <div key={course.id} className="rounded-xl border border-slate-800/80 bg-slate-950/70 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm font-semibold">{course.title}</p>
                   <span className="text-xs uppercase tracking-[0.2em] text-slate-500">

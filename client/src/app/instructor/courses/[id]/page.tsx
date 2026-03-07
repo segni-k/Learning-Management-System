@@ -1085,10 +1085,7 @@ export default function InstructorCourseDetailPage() {
 
         {status && <p className="text-sm text-rose-300">{status}</p>}
 
-        <form
-          onSubmit={handleCreateModule}
-          className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6"
-        >
+        <form onSubmit={handleCreateModule} className="glass-panel rounded-2xl p-6">
           <h2 className="text-lg font-semibold">Create module</h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="grid gap-2 text-sm">
@@ -1110,7 +1107,7 @@ export default function InstructorCourseDetailPage() {
             </label>
           </div>
           <button
-            className="mt-4 rounded-full bg-lime-300 px-5 py-2 text-sm font-semibold text-slate-900"
+            className="mt-4 rounded-full bg-amber-400 px-5 py-2 text-sm font-semibold text-slate-900"
             type="submit"
           >
             Add module
@@ -1121,8 +1118,8 @@ export default function InstructorCourseDetailPage() {
           {orderedModules.map((module) => (
             <div
               key={module.id}
-              className={`rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition ${
-                dragOverModuleId === module.id ? "ring-2 ring-lime-300/40" : ""
+              className={`glass-panel rounded-2xl p-6 transition ${
+                dragOverModuleId === module.id ? "ring-2 ring-amber-300/40" : ""
               } ${draggingModuleId === module.id ? "opacity-70" : ""}`}
               draggable
               onDragStart={(event) => handleModuleDragStart(event, module.id)}
@@ -1210,7 +1207,7 @@ export default function InstructorCourseDetailPage() {
                         className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3 transition ${
                           dragOverLesson?.lessonId === lesson.id &&
                           dragOverLesson?.moduleId === module.id
-                            ? "ring-2 ring-lime-300/30"
+                            ? "ring-2 ring-amber-300/30"
                             : ""
                         } ${
                           draggingLesson?.lessonId === lesson.id &&
@@ -1323,7 +1320,7 @@ export default function InstructorCourseDetailPage() {
         </section>
 
         <section className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <div className="glass-panel rounded-2xl p-6">
             <h2 className="text-lg font-semibold">Assignments</h2>
             <form className="mt-4 grid gap-3" onSubmit={handleCreateAssignment}>
               <input
@@ -1357,7 +1354,7 @@ export default function InstructorCourseDetailPage() {
                 Published
               </label>
               <button
-                className="rounded-full bg-lime-300 px-5 py-2 text-xs font-semibold text-slate-900"
+                className="rounded-full bg-amber-400 px-5 py-2 text-xs font-semibold text-slate-900"
                 type="submit"
               >
                 Create assignment
@@ -1454,7 +1451,7 @@ export default function InstructorCourseDetailPage() {
                               </button>
                               {submission.file_path ? (
                                 <a
-                                  className="text-xs text-lime-300"
+                                  className="text-xs text-amber-300"
                                   href={submissionDownloadUrl(submission.id)}
                                 >
                                   Download
@@ -1477,7 +1474,7 @@ export default function InstructorCourseDetailPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <div className="glass-panel rounded-2xl p-6">
             <h2 className="text-lg font-semibold">Quizzes</h2>
             <form className="mt-4 grid gap-3" onSubmit={handleCreateQuiz}>
               <input
@@ -1513,7 +1510,7 @@ export default function InstructorCourseDetailPage() {
                 Published
               </label>
               <button
-                className="rounded-full bg-lime-300 px-5 py-2 text-xs font-semibold text-slate-900"
+                className="rounded-full bg-amber-400 px-5 py-2 text-xs font-semibold text-slate-900"
                 type="submit"
               >
                 Create quiz
@@ -1642,7 +1639,7 @@ export default function InstructorCourseDetailPage() {
                           min={1}
                         />
                         <button
-                          className="rounded-full bg-lime-300 px-4 py-2 text-xs font-semibold text-slate-900"
+                          className="rounded-full bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-900"
                           type="button"
                           onClick={() => void handleCreateQuestion(quiz)}
                         >
@@ -1737,7 +1734,7 @@ export default function InstructorCourseDetailPage() {
                           className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3 ${
                             dragOverQuestion?.quizId === quiz.id &&
                             dragOverQuestion?.questionId === question.id
-                              ? "ring-2 ring-lime-300/30"
+                              ? "ring-2 ring-amber-300/30"
                               : ""
                           } ${
                             draggingQuestion?.quizId === quiz.id &&
@@ -1885,7 +1882,7 @@ export default function InstructorCourseDetailPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+        <section className="glass-panel rounded-2xl p-6">
           <h2 className="text-lg font-semibold">Resources</h2>
           <form className="mt-4 grid gap-3" onSubmit={handleUploadResource}>
             <div className="grid gap-3 md:grid-cols-2">
@@ -1955,7 +1952,7 @@ export default function InstructorCourseDetailPage() {
                   <p className="text-sm font-semibold">{resource.title}</p>
                   <p className="text-xs text-slate-500">{resource.type}</p>
                 </div>
-                <a className="text-xs text-lime-300" href={resourceDownloadUrl(resource.id)}>
+                <a className="text-xs text-amber-300" href={resourceDownloadUrl(resource.id)}>
                   Download
                 </a>
               </div>
@@ -1964,7 +1961,7 @@ export default function InstructorCourseDetailPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+        <section className="glass-panel rounded-2xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold">Roster progress</h2>
             <button
