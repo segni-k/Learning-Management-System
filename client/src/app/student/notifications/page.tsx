@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { RequireAuth } from "@/components/require-auth";
 import { listStudentNotifications } from "@/lib/student";
+import { Panel } from "@/components/ui/panel";
+import { Card } from "@/components/ui/card";
 import type { StudentNotifications } from "@/lib/types";
 
 export default function StudentNotificationsPage() {
@@ -38,48 +40,48 @@ export default function StudentNotificationsPage() {
         {status && <p className="text-sm text-rose-300">{status}</p>}
 
         <section className="grid gap-6 lg:grid-cols-3">
-          <div className="glass-panel rounded-2xl p-6">
+          <Panel>
             <h2 className="text-lg font-semibold">Upcoming assignments</h2>
             <div className="mt-4 space-y-3">
               {(notifications?.upcoming_assignments ?? []).map((item) => (
-                <div key={`assignment-${item.id}`} className="rounded-xl border border-slate-800/80 bg-slate-950/70 p-3">
+                <Card key={`assignment-${item.id}`} className="p-3">
                   <p className="text-sm font-semibold">{item.title}</p>
                   <p className="text-xs text-slate-500">Due {item.due_at ?? "-"}</p>
-                </div>
+                </Card>
               ))}
               {!(notifications?.upcoming_assignments ?? []).length && (
                 <p className="text-sm text-slate-400">No upcoming assignments.</p>
               )}
             </div>
-          </div>
-          <div className="glass-panel rounded-2xl p-6">
+          </Panel>
+          <Panel>
             <h2 className="text-lg font-semibold">New lessons</h2>
             <div className="mt-4 space-y-3">
               {(notifications?.new_lessons ?? []).map((item) => (
-                <div key={`lesson-${item.id}`} className="rounded-xl border border-slate-800/80 bg-slate-950/70 p-3">
+                <Card key={`lesson-${item.id}`} className="p-3">
                   <p className="text-sm font-semibold">{item.title}</p>
                   <p className="text-xs text-slate-500">Added {item.created_at ?? "-"}</p>
-                </div>
+                </Card>
               ))}
               {!(notifications?.new_lessons ?? []).length && (
                 <p className="text-sm text-slate-400">No new lessons.</p>
               )}
             </div>
-          </div>
-          <div className="glass-panel rounded-2xl p-6">
+          </Panel>
+          <Panel>
             <h2 className="text-lg font-semibold">New quizzes</h2>
             <div className="mt-4 space-y-3">
               {(notifications?.new_quizzes ?? []).map((item) => (
-                <div key={`quiz-${item.id}`} className="rounded-xl border border-slate-800/80 bg-slate-950/70 p-3">
+                <Card key={`quiz-${item.id}`} className="p-3">
                   <p className="text-sm font-semibold">{item.title}</p>
                   <p className="text-xs text-slate-500">Added {item.created_at ?? "-"}</p>
-                </div>
+                </Card>
               ))}
               {!(notifications?.new_quizzes ?? []).length && (
                 <p className="text-sm text-slate-400">No new quizzes.</p>
               )}
             </div>
-          </div>
+          </Panel>
         </section>
       </main>
     </RequireAuth>

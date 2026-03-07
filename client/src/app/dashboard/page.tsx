@@ -11,6 +11,10 @@ import {
 } from "@/lib/student";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/require-auth";
+import { Panel } from "@/components/ui/panel";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import type {
   StudentActivity,
   StudentCoursework,
@@ -72,19 +76,15 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-semibold">Welcome back, {user?.name ?? "there"}</h1>
             <p className="text-sm text-slate-400">Your courses and learning activity.</p>
           </div>
-          <button
-            className="rounded-full border border-slate-700 px-5 py-2 text-sm font-medium text-slate-200"
-            type="button"
-            onClick={() => void logout()}
-          >
+          <Button type="button" className="px-5 py-2 text-sm" onClick={() => void logout()}>
             Sign out
-          </button>
+          </Button>
         </header>
 
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+        <Panel>
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Overview</h2>
-            <Link className="text-sm text-lime-300" href="/">
+            <Link className="text-sm text-amber-300" href="/">
               Back to home
             </Link>
           </div>
@@ -93,37 +93,35 @@ export default function DashboardPage() {
 
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {(overview?.courses ?? []).map((course) => (
-              <article key={course.id} className="rounded-xl border border-slate-800 bg-slate-950/80 p-4">
+              <Card key={course.id} className="p-4">
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="text-lg font-semibold">{course.title}</h3>
-                  <span className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                    {course.status}
-                  </span>
+                  <Badge>{course.status}</Badge>
                 </div>
                 <p className="mt-2 text-sm text-slate-400">
                   {course.completed_lessons}/{course.total_lessons} lessons completed
                 </p>
                 <p className="text-xs text-slate-500">Avg progress: {course.average_progress}%</p>
                 <div className="mt-3 flex flex-wrap gap-3 text-xs">
-                  <Link className="text-lime-300" href={`/courses/${course.id}`}>
+                  <Link className="text-amber-300" href={`/courses/${course.id}`}>
                     Open course
                   </Link>
                   <Link className="text-slate-300" href={`/courses/${course.id}/dashboard`}>
                     Dashboard
                   </Link>
                 </div>
-              </article>
+              </Card>
             ))}
             {!(overview?.courses ?? []).length && (
               <p className="text-sm text-slate-400">No enrolled courses yet.</p>
             )}
           </div>
-        </section>
+        </Panel>
 
         {resumeLesson ? (
-          <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <Panel>
             <h2 className="text-lg font-semibold">Resume lesson</h2>
-            <div className="mt-3 rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <Card className="mt-3">
               <p className="text-sm font-semibold">{resumeLesson.lesson?.title}</p>
               <p className="text-xs text-slate-400">
                 {resumeLesson.course?.title} · {resumeLesson.module?.title}
@@ -131,50 +129,53 @@ export default function DashboardPage() {
               <p className="mt-2 text-xs text-slate-500">
                 Progress: {resumeLesson.progress_percent}%
               </p>
-              <Link className="mt-3 inline-flex text-xs text-lime-300" href={`/courses/${resumeLesson.course?.id}`}>
+              <Link
+                className="mt-3 inline-flex text-xs text-amber-300"
+                href={`/courses/${resumeLesson.course?.id}`}
+              >
                 Continue
               </Link>
-            </div>
-          </section>
+            </Card>
+          </Panel>
         ) : null}
 
         <section className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <Panel>
             <h2 className="text-lg font-semibold">Upcoming assignments</h2>
             <div className="mt-4 space-y-3">
               {(overview?.upcoming_assignments ?? []).map((assignment) => (
-                <div key={assignment.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                <Card key={assignment.id} className="p-3">
                   <p className="text-sm font-semibold">{assignment.title}</p>
                   <p className="text-xs text-slate-500">
                     {assignment.course_id ? `Course #${assignment.course_id}` : ""} · Due {assignment.due_at}
                   </p>
-                </div>
+                </Card>
               ))}
               {!(overview?.upcoming_assignments ?? []).length && (
                 <p className="text-sm text-slate-400">No upcoming assignments.</p>
               )}
             </div>
-          </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          </Panel>
+          <Panel>
             <h2 className="text-lg font-semibold">Available quizzes</h2>
             <div className="mt-4 space-y-3">
               {(overview?.available_quizzes ?? []).map((quiz) => (
-                <div key={quiz.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                <Card key={quiz.id} className="p-3">
                   <p className="text-sm font-semibold">{quiz.title}</p>
                   <p className="text-xs text-slate-500">
                     {quiz.course_id ? `Course #${quiz.course_id}` : ""} · Attempts {quiz.max_attempts ?? "-"}
                   </p>
-                </div>
+                </Card>
               ))}
               {!(overview?.available_quizzes ?? []).length && (
                 <p className="text-sm text-slate-400">No quizzes available.</p>
               )}
             </div>
-          </div>
+          </Panel>
         </section>
 
         <section className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <Panel>
             <h2 className="text-lg font-semibold">Notifications</h2>
             <div className="mt-4 space-y-4 text-sm">
               <div>
@@ -220,45 +221,45 @@ export default function DashboardPage() {
                 </ul>
               </div>
             </div>
-          </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          </Panel>
+          <Panel>
             <h2 className="text-lg font-semibold">Recent activity</h2>
             <div className="mt-4 space-y-3 text-sm">
               {recentSubmissions.map((item) => (
-                <div key={`submission-${item.id}`} className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
+                <Card key={`submission-${item.id}`} className="p-3">
                   <p className="text-sm font-medium">Assignment submitted</p>
                   <p className="text-xs text-slate-500">
                     {item.assignment?.title} · {item.submitted_at}
                   </p>
-                </div>
+                </Card>
               ))}
               {recentAttempts.map((item) => (
-                <div key={`attempt-${item.id}`} className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
+                <Card key={`attempt-${item.id}`} className="p-3">
                   <p className="text-sm font-medium">Quiz attempt</p>
                   <p className="text-xs text-slate-500">
                     {item.quiz?.title} · {item.completed_at} · Score {item.score ?? "-"}
                   </p>
-                </div>
+                </Card>
               ))}
               {!recentSubmissions.length && !recentAttempts.length && (
                 <p className="text-sm text-slate-400">No recent activity.</p>
               )}
             </div>
-          </div>
+          </Panel>
         </section>
 
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+        <Panel>
           <h2 className="text-lg font-semibold">Coursework</h2>
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
             <div className="space-y-2">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Assignments</p>
               {(coursework?.assignments ?? []).map((assignment) => (
-                <div key={assignment.id} className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
+                <Card key={assignment.id} className="p-3">
                   <p className="text-sm font-medium">{assignment.title}</p>
                   <p className="text-xs text-slate-500">
                     {assignment.status} · Due {assignment.due_at ?? "-"}
                   </p>
-                </div>
+                </Card>
               ))}
               {!(coursework?.assignments ?? []).length && (
                 <p className="text-sm text-slate-400">No assignments found.</p>
@@ -267,19 +268,19 @@ export default function DashboardPage() {
             <div className="space-y-2">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Quizzes</p>
               {(coursework?.quizzes ?? []).map((quiz) => (
-                <div key={quiz.id} className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
+                <Card key={quiz.id} className="p-3">
                   <p className="text-sm font-medium">{quiz.title}</p>
                   <p className="text-xs text-slate-500">
                     {quiz.status} · Attempts {quiz.attempts_used}/{quiz.max_attempts ?? "-"}
                   </p>
-                </div>
+                </Card>
               ))}
               {!(coursework?.quizzes ?? []).length && (
                 <p className="text-sm text-slate-400">No quizzes found.</p>
               )}
             </div>
           </div>
-        </section>
+        </Panel>
       </main>
     </RequireAuth>
   );

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { RequireAuth } from "@/components/require-auth";
 import { listEnrollments } from "@/lib/enrollments";
+import { Panel } from "@/components/ui/panel";
+import { Card } from "@/components/ui/card";
 import type { Enrollment } from "@/lib/types";
 
 export default function StudentEnrollmentsPage() {
@@ -37,20 +39,20 @@ export default function StudentEnrollmentsPage() {
 
         {status && <p className="text-sm text-rose-300">{status}</p>}
 
-        <section className="glass-panel rounded-2xl p-6">
+        <Panel>
           <div className="grid gap-4 md:grid-cols-2">
             {enrollments.map((enrollment) => (
-              <div key={enrollment.id} className="rounded-xl border border-slate-800/80 bg-slate-950/70 p-4">
+              <Card key={enrollment.id} className="p-4">
                 <p className="text-sm font-semibold">{enrollment.course?.title}</p>
                 <p className="text-xs text-slate-500">Status {enrollment.status}</p>
                 <p className="text-xs text-slate-500">Enrolled {enrollment.enrolled_at}</p>
-              </div>
+              </Card>
             ))}
             {!enrollments.length && (
               <p className="text-sm text-slate-400">No enrollments yet.</p>
             )}
           </div>
-        </section>
+        </Panel>
       </main>
     </RequireAuth>
   );

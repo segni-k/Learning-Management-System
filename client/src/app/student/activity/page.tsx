@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { RequireAuth } from "@/components/require-auth";
 import { listStudentActivity } from "@/lib/student";
+import { Panel } from "@/components/ui/panel";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import type { StudentActivity } from "@/lib/types";
 
 export default function StudentActivityPage() {
@@ -45,72 +48,72 @@ export default function StudentActivityPage() {
         {status && <p className="text-sm text-rose-300">{status}</p>}
 
         <section className="grid gap-6 lg:grid-cols-2">
-          <div className="glass-panel rounded-2xl p-6">
+          <Panel>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Assignment submissions</h2>
               <div className="flex gap-2">
-                <button
-                  className="rounded-full border border-slate-700/80 px-3 py-1 text-xs"
+                <Button
                   type="button"
+                  className="px-3 py-1 text-xs"
                   onClick={() => setSubmissionsPage((prev) => Math.max(1, prev - 1))}
                 >
                   Prev
-                </button>
-                <button
-                  className="rounded-full border border-slate-700/80 px-3 py-1 text-xs"
+                </Button>
+                <Button
                   type="button"
+                  className="px-3 py-1 text-xs"
                   onClick={() => setSubmissionsPage((prev) => prev + 1)}
                 >
                   Next
-                </button>
+                </Button>
               </div>
             </div>
             <div className="mt-4 space-y-3">
               {(activity?.assignment_submissions ?? []).map((item) => (
-                <div key={item.id} className="rounded-xl border border-slate-800/80 bg-slate-950/70 p-3">
+                <Card key={item.id} className="p-3">
                   <p className="text-sm font-semibold">{item.assignment?.title}</p>
                   <p className="text-xs text-slate-500">Submitted {item.submitted_at}</p>
                   <p className="text-xs text-slate-500">Score {item.score ?? "-"}</p>
-                </div>
+                </Card>
               ))}
               {!(activity?.assignment_submissions ?? []).length && (
                 <p className="text-sm text-slate-400">No submissions yet.</p>
               )}
             </div>
-          </div>
-          <div className="glass-panel rounded-2xl p-6">
+          </Panel>
+          <Panel>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Quiz attempts</h2>
               <div className="flex gap-2">
-                <button
-                  className="rounded-full border border-slate-700/80 px-3 py-1 text-xs"
+                <Button
                   type="button"
+                  className="px-3 py-1 text-xs"
                   onClick={() => setAttemptsPage((prev) => Math.max(1, prev - 1))}
                 >
                   Prev
-                </button>
-                <button
-                  className="rounded-full border border-slate-700/80 px-3 py-1 text-xs"
+                </Button>
+                <Button
                   type="button"
+                  className="px-3 py-1 text-xs"
                   onClick={() => setAttemptsPage((prev) => prev + 1)}
                 >
                   Next
-                </button>
+                </Button>
               </div>
             </div>
             <div className="mt-4 space-y-3">
               {(activity?.quiz_attempts ?? []).map((item) => (
-                <div key={item.id} className="rounded-xl border border-slate-800/80 bg-slate-950/70 p-3">
+                <Card key={item.id} className="p-3">
                   <p className="text-sm font-semibold">{item.quiz?.title}</p>
                   <p className="text-xs text-slate-500">Completed {item.completed_at}</p>
                   <p className="text-xs text-slate-500">Score {item.score ?? "-"}</p>
-                </div>
+                </Card>
               ))}
               {!(activity?.quiz_attempts ?? []).length && (
                 <p className="text-sm text-slate-400">No attempts yet.</p>
               )}
             </div>
-          </div>
+          </Panel>
         </section>
       </main>
     </RequireAuth>

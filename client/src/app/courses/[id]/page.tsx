@@ -16,6 +16,10 @@ import { listQuizQuestions } from "@/lib/quiz-questions";
 import { createQuizAttempt } from "@/lib/quiz-attempts";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/require-auth";
+import { Panel } from "@/components/ui/panel";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import type {
   Course,
   StudentCourseDashboard,
@@ -215,14 +219,15 @@ export default function CourseDetailPage() {
               <p className="text-sm text-slate-400">{course?.description ?? ""}</p>
             </div>
             {user?.role === "student" ? (
-              <button
-                className="rounded-full bg-lime-300 px-5 py-2 text-xs font-semibold text-slate-900 disabled:opacity-60"
+              <Button
                 type="button"
+                variant="primary"
+                className="px-5 py-2 text-xs"
                 onClick={() => void handleEnroll()}
                 disabled={isEnrolled || isEnrolling}
               >
                 {isEnrolled ? "Enrolled" : isEnrolling ? "Enrolling..." : "Enroll"}
-              </button>
+              </Button>
             ) : null}
           </div>
         </header>
@@ -230,44 +235,44 @@ export default function CourseDetailPage() {
         {status && <p className="text-sm text-rose-300">{status}</p>}
 
         {dashboard ? (
-          <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <Panel>
             <h2 className="text-lg font-semibold">Your progress</h2>
             <div className="mt-4 grid gap-4 md:grid-cols-3">
-              <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+              <Card>
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Completed</p>
                 <p className="text-2xl font-semibold">
                   {dashboard.progress.completed_lessons}/{dashboard.progress.total_lessons}
                 </p>
-              </div>
-              <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+              </Card>
+              <Card>
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Average</p>
                 <p className="text-2xl font-semibold">{dashboard.progress.average_progress}%</p>
-              </div>
-              <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+              </Card>
+              <Card>
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Resume</p>
                 <p className="text-sm font-semibold">
                   {dashboard.resume_lesson?.lesson?.title ?? "No lesson in progress"}
                 </p>
-              </div>
+              </Card>
             </div>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               {dashboard.modules.map((module) => (
-                <div key={module.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                <Card key={module.id} className="p-3">
                   <p className="text-sm font-semibold">{module.title}</p>
                   <p className="text-xs text-slate-500">
                     {module.completed_lessons}/{module.total_lessons} lessons · {module.average_progress}% avg
                   </p>
-                </div>
+                </Card>
               ))}
             </div>
-          </section>
+          </Panel>
         ) : null}
 
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+        <Panel>
           <h2 className="text-lg font-semibold">Modules</h2>
           <div className="mt-4 space-y-4">
             {course?.modules?.map((module) => (
-              <div key={module.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+              <Card key={module.id} className="p-4">
                 <h3 className="text-base font-semibold">{module.title}</h3>
                 <p className="mt-2 text-sm text-slate-400">{module.description ?? ""}</p>
                 <ul className="mt-3 space-y-2 text-sm text-slate-300">
@@ -281,47 +286,44 @@ export default function CourseDetailPage() {
                         <span>{lesson.title}</span>
                       )}
                       {lesson.is_published ? (
-                        <span className="text-xs text-lime-300">Published</span>
+                        <Badge className="border-amber-400/40 text-amber-200">Published</Badge>
                       ) : (
-                        <span className="text-xs text-slate-500">Draft</span>
+                        <Badge>Draft</Badge>
                       )}
                       {user?.role === "student" && isEnrolled && lesson.is_published ? (
-                        <button
-                          className="rounded-full border border-slate-700 px-3 py-1 text-[10px]"
+                        <Button
                           type="button"
+                          className="px-3 py-1 text-[10px]"
                           onClick={() => void handleMarkLessonComplete(lesson.id)}
                         >
                           Mark complete
-                        </button>
+                        </Button>
                       ) : null}
                     </li>
                   ))}
                 </ul>
-              </div>
+              </Card>
             ))}
             {!course?.modules?.length && (
               <p className="text-sm text-slate-400">No modules yet.</p>
             )}
           </div>
-        </section>
+        </Panel>
 
         <section className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <Panel>
             <h2 className="text-lg font-semibold">Resources</h2>
             <div className="mt-4 space-y-3">
               {resources.map((resource) => (
-                <div key={resource.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                <Card key={resource.id} className="flex items-center justify-between gap-3 p-3">
                   <div>
                     <p className="text-sm font-semibold">{resource.title}</p>
                     <p className="text-xs text-slate-500">{resource.type}</p>
                   </div>
-                  <a
-                    className="text-xs text-lime-300"
-                    href={resourceDownloadUrl(resource.id)}
-                  >
+                  <a className="text-xs text-amber-300" href={resourceDownloadUrl(resource.id)}>
                     Download
                   </a>
-                </div>
+                </Card>
               ))}
               {!resources.length && (
                 <p className="text-sm text-slate-400">
@@ -331,18 +333,16 @@ export default function CourseDetailPage() {
                 </p>
               )}
             </div>
-          </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          </Panel>
+          <Panel>
             <h2 className="text-lg font-semibold">Assignments</h2>
             <div className="mt-4 space-y-4">
               {courseAssignments.map((assignment) => (
-                <div key={assignment.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                <Card key={assignment.id} className="p-4">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-semibold">{assignment.title}</p>
                     {"status" in assignment ? (
-                      <span className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                        {assignment.status}
-                      </span>
+                      <Badge>{assignment.status}</Badge>
                     ) : null}
                   </div>
                   <p className="text-xs text-slate-500">Due {assignment.due_at ?? "-"}</p>
@@ -369,30 +369,30 @@ export default function CourseDetailPage() {
                           }))
                         }
                       />
-                      <button
-                        className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                      <Button
                         type="button"
+                        className="px-4 py-2 text-xs"
                         onClick={() => void handleSubmitAssignment(assignment.id)}
                         disabled={submittingAssignment[assignment.id]}
                       >
                         {submittingAssignment[assignment.id] ? "Submitting..." : "Submit"}
-                      </button>
+                      </Button>
                     </div>
                   ) : null}
-                </div>
+                </Card>
               ))}
               {!courseAssignments.length && (
                 <p className="text-sm text-slate-400">No assignments yet.</p>
               )}
             </div>
-          </div>
+          </Panel>
         </section>
 
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+        <Panel>
           <h2 className="text-lg font-semibold">Quizzes</h2>
           <div className="mt-4 space-y-4">
             {courseQuizzes.map((quiz) => (
-              <div key={quiz.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+              <Card key={quiz.id} className="p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold">{quiz.title}</p>
@@ -403,19 +403,19 @@ export default function CourseDetailPage() {
                     ) : null}
                   </div>
                   {user?.role === "student" && isEnrolled ? (
-                    <button
-                      className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                    <Button
                       type="button"
+                      className="px-4 py-2 text-xs"
                       onClick={() => void handleLoadQuizQuestions(quiz.id)}
                     >
                       Load questions
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
                 {quizQuestions[quiz.id]?.length ? (
                   <div className="mt-3 space-y-3">
                     {quizQuestions[quiz.id].map((question) => (
-                      <div key={question.id} className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
+                      <Card key={question.id} className="p-3">
                         <p className="text-sm font-semibold">{question.question_text}</p>
                         {question.question_type === "essay" ? (
                           <textarea
@@ -468,30 +468,30 @@ export default function CourseDetailPage() {
                               ))}
                           </div>
                         )}
-                      </div>
+                      </Card>
                     ))}
                     <div className="flex flex-wrap items-center gap-3">
-                      <button
-                        className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                      <Button
                         type="button"
+                        className="px-4 py-2 text-xs"
                         onClick={() => void handleSubmitQuiz(quiz.id)}
                         disabled={quizSubmitting[quiz.id]}
                       >
                         {quizSubmitting[quiz.id] ? "Submitting..." : "Submit quiz"}
-                      </button>
+                      </Button>
                       {quizResult[quiz.id] ? (
-                        <span className="text-xs text-lime-300">{quizResult[quiz.id]}</span>
+                        <span className="text-xs text-amber-300">{quizResult[quiz.id]}</span>
                       ) : null}
                     </div>
                   </div>
                 ) : null}
-              </div>
+              </Card>
             ))}
             {!courseQuizzes.length && (
               <p className="text-sm text-slate-400">No quizzes yet.</p>
             )}
           </div>
-        </section>
+        </Panel>
       </main>
     </RequireAuth>
   );

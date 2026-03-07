@@ -12,6 +12,9 @@ import { listQuizQuestions } from "@/lib/quiz-questions";
 import { createQuizAttempt } from "@/lib/quiz-attempts";
 import { upsertLessonProgress } from "@/lib/student";
 import { useAuth } from "@/lib/auth-context";
+import { Panel } from "@/components/ui/panel";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import type { Course, Lesson, Module, QuizQuestion, Resource } from "@/lib/types";
 
 export default function LessonPlayerPage() {
@@ -211,7 +214,7 @@ export default function LessonPlayerPage() {
           <p className="text-sm text-slate-400">
             {course?.title ?? ""} {module ? `· ${module.title}` : ""}
           </p>
-          <Link className="text-xs text-lime-300" href={`/courses/${courseId}`}>
+          <Link className="text-xs text-amber-300" href={`/courses/${courseId}`}>
             Back to course
           </Link>
         </header>
@@ -219,7 +222,7 @@ export default function LessonPlayerPage() {
         {status && <p className="text-sm text-rose-300">{status}</p>}
 
         {lesson ? (
-          <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <Panel>
             <div className="space-y-4" ref={contentRef}>
               {lesson.video_url ? (
                 <div className="aspect-video w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950/70">
@@ -259,58 +262,53 @@ export default function LessonPlayerPage() {
                   onChange={(event) => setProgress(Number(event.target.value))}
                 />
               </label>
-              <button
-                className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+              <Button
                 type="button"
+                className="px-4 py-2 text-xs"
                 onClick={() => void handleSaveProgress("in_progress")}
               >
                 Save progress
-              </button>
-              <button
-                className="rounded-full bg-lime-300 px-4 py-2 text-xs font-semibold text-slate-900"
+              </Button>
+              <Button
                 type="button"
+                variant="primary"
+                className="px-4 py-2 text-xs"
                 onClick={() => void handleSaveProgress("completed")}
               >
                 Mark complete
-              </button>
+              </Button>
             </div>
-          </section>
+          </Panel>
         ) : (
           <p className="text-sm text-slate-400">Lesson not found.</p>
         )}
 
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+        <Panel>
           <h2 className="text-lg font-semibold">Lesson resources</h2>
           <div className="mt-4 space-y-3">
             {resources.map((resource) => (
-              <div
-                key={resource.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3"
-              >
+              <Card key={resource.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
                 <div>
                   <p className="text-sm font-semibold">{resource.title}</p>
                   <p className="text-xs text-slate-500">{resource.type}</p>
                 </div>
-                <a className="text-xs text-lime-300" href={resourceDownloadUrl(resource.id)}>
+                <a className="text-xs text-amber-300" href={resourceDownloadUrl(resource.id)}>
                   Download
                 </a>
-              </div>
+              </Card>
             ))}
             {!resources.length && <p className="text-sm text-slate-400">No resources yet.</p>}
           </div>
-        </section>
+        </Panel>
 
         <section className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <Panel>
             <h2 className="text-lg font-semibold">Lesson assignments</h2>
             <div className="mt-4 space-y-4">
               {(course?.assignments ?? [])
                 .filter((assignment) => assignment.lesson_id === lessonId)
                 .map((assignment) => (
-                  <div
-                    key={assignment.id}
-                    className="rounded-xl border border-slate-800 bg-slate-950/70 p-4"
-                  >
+                  <Card key={assignment.id} className="p-4">
                     <p className="text-sm font-semibold">{assignment.title}</p>
                     <p className="text-xs text-slate-500">Due {assignment.due_at ?? "-"}</p>
                     {user?.role === "student" && isEnrolled ? (
@@ -336,50 +334,47 @@ export default function LessonPlayerPage() {
                             }))
                           }
                         />
-                        <button
-                          className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                        <Button
                           type="button"
+                          className="px-4 py-2 text-xs"
                           onClick={() => void handleSubmitAssignment(assignment.id)}
                           disabled={submittingAssignment[assignment.id]}
                         >
                           {submittingAssignment[assignment.id] ? "Submitting..." : "Submit"}
-                        </button>
+                        </Button>
                       </div>
                     ) : null}
-                  </div>
+                  </Card>
                 ))}
               {(course?.assignments ?? []).filter((assignment) => assignment.lesson_id === lessonId)
                 .length === 0 ? (
                 <p className="text-sm text-slate-400">No assignments for this lesson.</p>
               ) : null}
             </div>
-          </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          </Panel>
+          <Panel>
             <h2 className="text-lg font-semibold">Lesson quizzes</h2>
             <div className="mt-4 space-y-4">
               {(course?.quizzes ?? [])
                 .filter((quiz) => quiz.lesson_id === lessonId)
                 .map((quiz) => (
-                  <div key={quiz.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                  <Card key={quiz.id} className="p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <p className="text-sm font-semibold">{quiz.title}</p>
                       {user?.role === "student" && isEnrolled ? (
-                        <button
-                          className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                        <Button
                           type="button"
+                          className="px-4 py-2 text-xs"
                           onClick={() => void handleLoadQuizQuestions(quiz.id)}
                         >
                           Load questions
-                        </button>
+                        </Button>
                       ) : null}
                     </div>
                     {quizQuestions[quiz.id]?.length ? (
                       <div className="mt-3 space-y-3">
                         {quizQuestions[quiz.id].map((question) => (
-                          <div
-                            key={question.id}
-                            className="rounded-lg border border-slate-800 bg-slate-950/70 p-3"
-                          >
+                          <Card key={question.id} className="p-3">
                             <p className="text-sm font-semibold">{question.question_text}</p>
                             {question.question_type === "essay" ? (
                               <textarea
@@ -432,31 +427,31 @@ export default function LessonPlayerPage() {
                                   ))}
                               </div>
                             )}
-                          </div>
+                          </Card>
                         ))}
                         <div className="flex flex-wrap items-center gap-3">
-                          <button
-                            className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                          <Button
                             type="button"
+                            className="px-4 py-2 text-xs"
                             onClick={() => void handleSubmitQuiz(quiz.id)}
                             disabled={quizSubmitting[quiz.id]}
                           >
                             {quizSubmitting[quiz.id] ? "Submitting..." : "Submit quiz"}
-                          </button>
+                          </Button>
                           {quizResult[quiz.id] ? (
-                            <span className="text-xs text-lime-300">{quizResult[quiz.id]}</span>
+                            <span className="text-xs text-amber-300">{quizResult[quiz.id]}</span>
                           ) : null}
                         </div>
                       </div>
                     ) : null}
-                  </div>
+                  </Card>
                 ))}
               {(course?.quizzes ?? []).filter((quiz) => quiz.lesson_id === lessonId).length ===
               0 ? (
                 <p className="text-sm text-slate-400">No quizzes for this lesson.</p>
               ) : null}
             </div>
-          </div>
+          </Panel>
         </section>
       </main>
     </RequireAuth>

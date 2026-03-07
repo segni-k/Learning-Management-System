@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { RequireAuth } from "@/components/require-auth";
 import { listStudentCoursework } from "@/lib/student";
+import { Panel } from "@/components/ui/panel";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import type { StudentCoursework } from "@/lib/types";
 
 export default function StudentCourseworkPage() {
@@ -52,7 +55,7 @@ export default function StudentCourseworkPage() {
 
         {status && <p className="text-sm text-rose-300">{status}</p>}
 
-        <section className="glass-panel rounded-2xl p-6">
+        <Panel>
           <h2 className="text-lg font-semibold">Filters</h2>
           <div className="mt-4 grid gap-3 md:grid-cols-4">
             <label className="grid gap-2 text-xs text-slate-400">
@@ -100,77 +103,77 @@ export default function StudentCourseworkPage() {
               />
             </label>
           </div>
-        </section>
+        </Panel>
 
         <section className="grid gap-6 lg:grid-cols-2">
-          <div className="glass-panel rounded-2xl p-6">
+          <Panel>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Assignments</h2>
               <div className="flex gap-2">
-                <button
-                  className="rounded-full border border-slate-700/80 px-3 py-1 text-xs"
+                <Button
                   type="button"
+                  className="px-3 py-1 text-xs"
                   onClick={() => setAssignmentsPage((prev) => Math.max(1, prev - 1))}
                 >
                   Prev
-                </button>
-                <button
-                  className="rounded-full border border-slate-700/80 px-3 py-1 text-xs"
+                </Button>
+                <Button
                   type="button"
+                  className="px-3 py-1 text-xs"
                   onClick={() => setAssignmentsPage((prev) => prev + 1)}
                 >
                   Next
-                </button>
+                </Button>
               </div>
             </div>
             <div className="mt-4 space-y-3">
               {(coursework?.assignments ?? []).map((assignment) => (
-                <div key={assignment.id} className="rounded-xl border border-slate-800/80 bg-slate-950/70 p-3">
+                <Card key={assignment.id} className="p-3">
                   <p className="text-sm font-semibold">{assignment.title}</p>
                   <p className="text-xs text-slate-500">Due {assignment.due_at ?? "-"}</p>
                   <p className="text-xs text-slate-500">Status {assignment.status}</p>
-                </div>
+                </Card>
               ))}
               {!(coursework?.assignments ?? []).length && (
                 <p className="text-sm text-slate-400">No assignments found.</p>
               )}
             </div>
-          </div>
-          <div className="glass-panel rounded-2xl p-6">
+          </Panel>
+          <Panel>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Quizzes</h2>
               <div className="flex gap-2">
-                <button
-                  className="rounded-full border border-slate-700/80 px-3 py-1 text-xs"
+                <Button
                   type="button"
+                  className="px-3 py-1 text-xs"
                   onClick={() => setQuizzesPage((prev) => Math.max(1, prev - 1))}
                 >
                   Prev
-                </button>
-                <button
-                  className="rounded-full border border-slate-700/80 px-3 py-1 text-xs"
+                </Button>
+                <Button
                   type="button"
+                  className="px-3 py-1 text-xs"
                   onClick={() => setQuizzesPage((prev) => prev + 1)}
                 >
                   Next
-                </button>
+                </Button>
               </div>
             </div>
             <div className="mt-4 space-y-3">
               {(coursework?.quizzes ?? []).map((quiz) => (
-                <div key={quiz.id} className="rounded-xl border border-slate-800/80 bg-slate-950/70 p-3">
+                <Card key={quiz.id} className="p-3">
                   <p className="text-sm font-semibold">{quiz.title}</p>
                   <p className="text-xs text-slate-500">Status {quiz.status}</p>
                   <p className="text-xs text-slate-500">
                     Attempts {quiz.attempts_used}/{quiz.max_attempts ?? "-"}
                   </p>
-                </div>
+                </Card>
               ))}
               {!(coursework?.quizzes ?? []).length && (
                 <p className="text-sm text-slate-400">No quizzes found.</p>
               )}
             </div>
-          </div>
+          </Panel>
         </section>
       </main>
     </RequireAuth>

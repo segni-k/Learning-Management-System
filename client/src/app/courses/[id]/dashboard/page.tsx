@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { RequireAuth } from "@/components/require-auth";
 import { getStudentCourseDashboard } from "@/lib/student";
+import { Panel } from "@/components/ui/panel";
+import { Card } from "@/components/ui/card";
 import type { StudentCourseDashboard } from "@/lib/types";
 
 export default function StudentCourseDashboardPage() {
@@ -35,7 +37,7 @@ export default function StudentCourseDashboardPage() {
           <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Course dashboard</p>
           <h1 className="text-3xl font-semibold">{dashboard?.course.title ?? "Course"}</h1>
           <p className="text-sm text-slate-400">Progress and upcoming work.</p>
-          <Link className="text-xs text-lime-300" href={`/courses/${id}`}>
+          <Link className="text-xs text-amber-300" href={`/courses/${id}`}>
             Back to course
           </Link>
         </header>
@@ -44,71 +46,71 @@ export default function StudentCourseDashboardPage() {
 
         {dashboard ? (
           <section className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+            <Panel className="p-5">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Lessons</p>
               <p className="text-2xl font-semibold">
                 {dashboard.progress.completed_lessons}/{dashboard.progress.total_lessons}
               </p>
-            </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+            </Panel>
+            <Panel className="p-5">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Avg progress</p>
               <p className="text-2xl font-semibold">{dashboard.progress.average_progress}%</p>
-            </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+            </Panel>
+            <Panel className="p-5">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Status</p>
               <p className="text-2xl font-semibold">{dashboard.course.status}</p>
-            </div>
+            </Panel>
           </section>
         ) : null}
 
         {dashboard?.resume_lesson ? (
-          <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <Panel>
             <h2 className="text-lg font-semibold">Resume lesson</h2>
-            <div className="mt-3 rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <Card className="mt-3">
               <p className="text-sm font-semibold">{dashboard.resume_lesson.lesson?.title}</p>
               <p className="text-xs text-slate-500">
                 {dashboard.resume_lesson.module?.title} · {dashboard.resume_lesson.progress_percent}%
               </p>
-            </div>
-          </section>
+            </Card>
+          </Panel>
         ) : null}
 
         <section className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <Panel>
             <h2 className="text-lg font-semibold">Upcoming assignments</h2>
             <div className="mt-4 space-y-3">
               {(dashboard?.upcoming_assignments ?? []).map((assignment) => (
-                <div key={assignment.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                <Card key={assignment.id} className="p-3">
                   <p className="text-sm font-semibold">{assignment.title}</p>
                   <p className="text-xs text-slate-500">Due {assignment.due_at}</p>
-                </div>
+                </Card>
               ))}
               {!(dashboard?.upcoming_assignments ?? []).length && (
                 <p className="text-sm text-slate-400">No upcoming assignments.</p>
               )}
             </div>
-          </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          </Panel>
+          <Panel>
             <h2 className="text-lg font-semibold">Recent quizzes</h2>
             <div className="mt-4 space-y-3">
               {(dashboard?.recent_quizzes ?? []).map((quiz) => (
-                <div key={quiz.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                <Card key={quiz.id} className="p-3">
                   <p className="text-sm font-semibold">{quiz.title}</p>
                   <p className="text-xs text-slate-500">Attempts {quiz.max_attempts ?? "-"}</p>
-                </div>
+                </Card>
               ))}
               {!(dashboard?.recent_quizzes ?? []).length && (
                 <p className="text-sm text-slate-400">No recent quizzes.</p>
               )}
             </div>
-          </div>
+          </Panel>
         </section>
 
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+        <Panel>
           <h2 className="text-lg font-semibold">Module progress</h2>
           <div className="mt-4 space-y-3">
             {(dashboard?.modules ?? []).map((module) => (
-              <div key={module.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+              <Card key={module.id} className="p-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold">{module.title}</p>
                   <p className="text-xs text-slate-500">
@@ -116,13 +118,13 @@ export default function StudentCourseDashboardPage() {
                   </p>
                 </div>
                 <p className="text-xs text-slate-500">Avg {module.average_progress}%</p>
-              </div>
+              </Card>
             ))}
             {!(dashboard?.modules ?? []).length && (
               <p className="text-sm text-slate-400">No module data yet.</p>
             )}
           </div>
-        </section>
+        </Panel>
       </main>
     </RequireAuth>
   );
