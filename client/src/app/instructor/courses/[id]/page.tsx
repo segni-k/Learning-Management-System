@@ -35,11 +35,13 @@ import {
 } from "@/lib/quiz-questions";
 import { listQuizAttempts } from "@/lib/quiz-attempts";
 import { listResources, resourceDownloadUrl, uploadResource } from "@/lib/resources";
+import { getCourseRosterProgress } from "@/lib/progress";
 import { RequireRole } from "@/components/require-role";
 import type {
   Assignment,
   AssignmentSubmission,
   Course,
+  CourseRosterProgressRow,
   Lesson,
   Module,
   Quiz,
@@ -110,6 +112,11 @@ export default function InstructorCourseDetailPage() {
   const [gradingScore, setGradingScore] = useState<Record<number, number>>({});
   const [expandedQuizAttempts, setExpandedQuizAttempts] = useState<Record<number, boolean>>({});
   const [quizAttempts, setQuizAttempts] = useState<Record<number, QuizAttempt[]>>({});
+  const [showRosterProgress, setShowRosterProgress] = useState(false);
+  const [rosterProgress, setRosterProgress] = useState<CourseRosterProgressRow[]>([]);
+  const [rosterLoading, setRosterLoading] = useState(false);
+  const [rosterQuery, setRosterQuery] = useState("");
+  const [rosterMinAverage, setRosterMinAverage] = useState("");
   const [resources, setResources] = useState<Resource[]>([]);
   const [resourceTitle, setResourceTitle] = useState("");
   const [resourceType, setResourceType] = useState("file");
@@ -990,6 +997,81 @@ export default function InstructorCourseDetailPage() {
     } finally {
       setResourceUploading(false);
     }
+  };
+
+  const handleToggleRosterProgress = async () => {
+    if (!id) return;
+    const next = !showRosterProgress;
+    setShowRosterProgress(next);
+    if (!next) return;
+
+    if (!rosterProgress.length) {
+      setRosterLoading(true);
+      try {
+        const response = await getCourseRosterProgress(id);
+        setRosterProgress(response.data);
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : "Failed to load roster progress");
+      } finally {
+        setRosterLoading(false);
+      }
+    }
+  };
+
+  const filteredRoster = useMemo(() => {
+    const query = rosterQuery.trim().toLowerCase();
+    const minAverage = rosterMinAverage ? Number(rosterMinAverage) : null;
+
+    return rosterProgress.filter((row) => {
+      const name = row.user?.name?.toLowerCase() ?? "";
+      const email = row.user?.email?.toLowerCase() ?? "";
+      const matchesQuery = query ? name.includes(query) || email.includes(query) : true;
+      const matchesAverage =
+        minAverage === null || Number.isNaN(minAverage)
+          ? true
+          : row.average_progress >= minAverage;
+      return matchesQuery && matchesAverage;
+    });
+  }, [rosterProgress, rosterQuery, rosterMinAverage]);
+
+  const downloadRosterCsv = () => {
+    if (!filteredRoster.length) return;
+    const headers = [
+      "student_id",
+      "student_name",
+      "student_email",
+      "total_lessons",
+      "completed_lessons",
+      "average_progress",
+    ];
+    const rows = filteredRoster.map((row) => [
+      row.user_id,
+      row.user?.name ?? "",
+      row.user?.email ?? "",
+      row.total,
+      row.completed,
+      row.average_progress,
+    ]);
+    const csv = [headers, ...rows]
+      .map((row) =>
+        row
+          .map((value) => {
+            const text = String(value ?? "");
+            return text.includes(",") || text.includes("\n") || text.includes('"')
+              ? `"${text.replace(/"/g, '""')}"`
+              : text;
+          })
+          .join(",")
+      )
+      .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `course-${id}-roster-progress.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -1880,6 +1962,70 @@ export default function InstructorCourseDetailPage() {
             ))}
             {!resources.length && <p className="text-sm text-slate-400">No resources yet.</p>}
           </div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">Roster progress</h2>
+            <button
+              className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+              type="button"
+              onClick={() => void handleToggleRosterProgress()}
+            >
+              {showRosterProgress ? "Hide" : "Load"}
+            </button>
+          </div>
+          {showRosterProgress ? (
+            <div className="mt-4 space-y-3">
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="grid gap-1 text-xs text-slate-400">
+                  Search
+                  <input
+                    className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs"
+                    value={rosterQuery}
+                    onChange={(event) => setRosterQuery(event.target.value)}
+                    placeholder="Name or email"
+                  />
+                </label>
+                <label className="grid gap-1 text-xs text-slate-400">
+                  Min avg %
+                  <input
+                    className="w-24 rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs"
+                    value={rosterMinAverage}
+                    onChange={(event) => setRosterMinAverage(event.target.value)}
+                    type="number"
+                    min={0}
+                    max={100}
+                  />
+                </label>
+                <button
+                  className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                  type="button"
+                  onClick={downloadRosterCsv}
+                >
+                  Download CSV
+                </button>
+              </div>
+              {rosterLoading ? <p className="text-sm text-slate-400">Loading roster...</p> : null}
+              {!rosterLoading && !filteredRoster.length ? (
+                <p className="text-sm text-slate-400">No progress data yet.</p>
+              ) : null}
+              {filteredRoster.map((row) => (
+                <div
+                  key={row.user_id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3"
+                >
+                  <div>
+                    <p className="text-sm font-semibold">{row.user?.name ?? "Student"}</p>
+                    <p className="text-xs text-slate-500">{row.user?.email ?? ""}</p>
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    {row.completed}/{row.total} lessons · Avg {row.average_progress}%
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </section>
       </main>
     </RequireRole>

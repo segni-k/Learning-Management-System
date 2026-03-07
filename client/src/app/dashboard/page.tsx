@@ -108,7 +108,7 @@ export default function DashboardPage() {
                   <Link className="text-lime-300" href={`/courses/${course.id}`}>
                     Open course
                   </Link>
-                  <Link className="text-slate-300" href={`/courses/${course.id}`}>
+                  <Link className="text-slate-300" href={`/courses/${course.id}/dashboard`}>
                     Dashboard
                   </Link>
                 </div>

@@ -244,6 +244,14 @@ export type CourseModuleProgress = {
   average_progress: number;
 };
 
+export type CourseRosterProgressRow = {
+  user_id: number;
+  total: number;
+  completed: number;
+  average_progress: number;
+  user?: User | null;
+};
+
 export type StudentCourseDashboard = {
   course: { id: number; title: string; status: string };
   progress: CourseProgressSummary;

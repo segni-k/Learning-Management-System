@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { getCourse } from "@/lib/courses";
 import { listEnrollments, enrollInCourse } from "@/lib/enrollments";
 import {
@@ -272,7 +273,13 @@ export default function CourseDetailPage() {
                 <ul className="mt-3 space-y-2 text-sm text-slate-300">
                   {module.lessons?.map((lesson) => (
                     <li key={lesson.id} className="flex items-center justify-between">
-                      <span>{lesson.title}</span>
+                      {lesson.is_published ? (
+                        <Link className="text-slate-200" href={`/courses/${id}/lessons/${lesson.id}`}>
+                          {lesson.title}
+                        </Link>
+                      ) : (
+                        <span>{lesson.title}</span>
+                      )}
                       {lesson.is_published ? (
                         <span className="text-xs text-lime-300">Published</span>
                       ) : (

@@ -86,9 +86,9 @@ class StudentCourseworkController extends Controller
             );
 
         $assignmentsData = $assignmentsPageData->getCollection()->map(function (Assignment $assignment) {
-            $submittedAt = $assignment->submission_submitted_at;
-            $gradedAt = $assignment->submission_graded_at;
-            $hasSubmission = ! is_null($assignment->submission_id);
+            $submittedAt = $assignment->getAttribute('submission_submitted_at');
+            $gradedAt = $assignment->getAttribute('submission_graded_at');
+            $hasSubmission = ! is_null($assignment->getAttribute('submission_id'));
 
             return [
                 'id' => $assignment->id,
@@ -100,7 +100,7 @@ class StudentCourseworkController extends Controller
                 'status' => $hasSubmission ? ($gradedAt ? 'graded' : 'submitted') : 'pending',
                 'submitted_at' => $submittedAt,
                 'graded_at' => $gradedAt,
-                'score' => $assignment->submission_score,
+                'score' => $assignment->getAttribute('submission_score'),
             ];
         });
 
@@ -163,7 +163,7 @@ class StudentCourseworkController extends Controller
             );
 
         $quizzesData = $quizzesPageData->getCollection()->map(function (Quiz $quiz) {
-            $attemptCount = (int) ($quiz->attempts_used ?? 0);
+            $attemptCount = (int) ($quiz->getAttribute('attempts_used') ?? 0);
             $remainingAttempts = $quiz->max_attempts ? max($quiz->max_attempts - $attemptCount, 0) : null;
 
             return [
@@ -174,8 +174,8 @@ class StudentCourseworkController extends Controller
                 'max_attempts' => $quiz->max_attempts,
                 'attempts_used' => $attemptCount,
                 'attempts_remaining' => $remainingAttempts,
-                'last_score' => $quiz->last_score,
-                'last_attempted_at' => $quiz->last_attempted_at,
+                'last_score' => $quiz->getAttribute('last_score'),
+                'last_attempted_at' => $quiz->getAttribute('last_attempted_at'),
                 'status' => $attemptCount > 0 ? 'attempted' : 'not_started',
             ];
         });
