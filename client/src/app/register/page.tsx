@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 export default function RegisterPage() {
   const router = useRouter();
   const { register, user } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,7 +21,13 @@ export default function RegisterPage() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) {
+      return;
+    }
+
     setStatus(null);
+    setIsSubmitting(true);
+
     try {
       await register({
         name,
@@ -31,6 +38,8 @@ export default function RegisterPage() {
       router.push("/dashboard");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Registration failed");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -54,6 +63,7 @@ export default function RegisterPage() {
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="Your name"
+              disabled={isSubmitting}
               required
             />
           </label>
@@ -65,6 +75,7 @@ export default function RegisterPage() {
               onChange={(event) => setEmail(event.target.value)}
               placeholder="student@example.com"
               type="email"
+              disabled={isSubmitting}
               required
             />
           </label>
@@ -75,6 +86,7 @@ export default function RegisterPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               type="password"
+              disabled={isSubmitting}
               required
             />
           </label>
@@ -85,15 +97,17 @@ export default function RegisterPage() {
               value={passwordConfirmation}
               onChange={(event) => setPasswordConfirmation(event.target.value)}
               type="password"
+              disabled={isSubmitting}
               required
             />
           </label>
 
           <button
-            className="mt-6 w-full rounded-full bg-lime-300 px-5 py-2 text-sm font-semibold text-slate-900"
+            className="mt-6 w-full rounded-full bg-lime-300 px-5 py-2 text-sm font-semibold text-slate-900 disabled:cursor-not-allowed disabled:opacity-70"
             type="submit"
+            disabled={isSubmitting}
           >
-            Create account
+            {isSubmitting ? "Creating account..." : "Create account"}
           </button>
 
           {status && <p className="mt-3 text-sm text-rose-300">{status}</p>}

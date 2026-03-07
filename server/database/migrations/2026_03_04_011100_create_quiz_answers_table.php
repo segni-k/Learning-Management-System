@@ -6,11 +6,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    public $withinTransaction = false;
+
     /**
      * Run the migrations.
      */
     public function up(): void
     {
+        if (Schema::hasTable('quiz_answers')) {
+            return;
+        }
+
         Schema::create('quiz_answers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('quiz_attempt_id')->constrained()->cascadeOnDelete();

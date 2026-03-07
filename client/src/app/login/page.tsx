@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 export default function LoginPage() {
   const router = useRouter();
   const { login, user } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<string | null>(null);
@@ -18,12 +19,20 @@ export default function LoginPage() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) {
+      return;
+    }
+
     setStatus(null);
+    setIsSubmitting(true);
+
     try {
       await login(email, password);
       router.push("/dashboard");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Login failed");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -48,6 +57,7 @@ export default function LoginPage() {
               onChange={(event) => setEmail(event.target.value)}
               placeholder="student@example.com"
               type="email"
+              disabled={isSubmitting}
               required
             />
           </label>
@@ -58,15 +68,17 @@ export default function LoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               type="password"
+              disabled={isSubmitting}
               required
             />
           </label>
 
           <button
-            className="mt-6 w-full rounded-full bg-lime-300 px-5 py-2 text-sm font-semibold text-slate-900"
+            className="mt-6 w-full rounded-full bg-lime-300 px-5 py-2 text-sm font-semibold text-slate-900 disabled:cursor-not-allowed disabled:opacity-70"
             type="submit"
+            disabled={isSubmitting}
           >
-            Sign in
+            {isSubmitting ? "Signing in..." : "Sign in"}
           </button>
 
           {status && <p className="mt-3 text-sm text-rose-300">{status}</p>}
