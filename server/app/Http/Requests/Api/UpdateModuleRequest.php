@@ -16,6 +16,8 @@ class UpdateModuleRequest extends FormRequest
         return [
             'title' => ['sometimes', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],
+            'takeaways' => ['sometimes', 'nullable', 'array'],
+            'takeaways.*' => ['string', 'max:255'],
             'sort_order' => ['sometimes', 'integer', 'min:0'],
         ];
     }

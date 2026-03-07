@@ -174,6 +174,45 @@ class DatabaseSeeder extends Seeder
                 }
             }
 
+            $course->load('modules.lessons');
+            $course->modules->each(function (Module $module) {
+                if (empty($module->takeaways)) {
+                    $module->update([
+                        'takeaways' => [
+                            fake()->sentence(4),
+                            fake()->sentence(4),
+                            fake()->sentence(4),
+                        ],
+                    ]);
+                }
+
+                $lessonCount = $module->lessons()->count();
+                if ($lessonCount < 3) {
+                    $start = $lessonCount + 1;
+                    $target = 3 - $lessonCount;
+                    for ($l = 0; $l < $target; $l++) {
+                        Lesson::create([
+                            'module_id' => $module->id,
+                            'title' => "Lesson ".($start + $l).": ".fake()->words(3, true),
+                            'content' => fake()->paragraphs(3, true),
+                            'video_url' => fake()->randomElement([
+                                'https://www.youtube.com/embed/ysz5S6PUM-U',
+                                'https://www.youtube.com/embed/jNQXAC9IVRw',
+                                'https://www.youtube.com/embed/k3oJf0kEEm0',
+                            ]),
+                            'duration_seconds' => fake()->numberBetween(300, 1800),
+                            'sort_order' => $start + $l,
+                            'is_published' => true,
+                        ]);
+                    }
+                }
+            });
+
+            $course->load('modules.lessons');
+            $lessons = $course->modules->flatMap(function (Module $module) {
+                return $module->lessons;
+            });
+
             $assignments = collect();
             if ($course->assignments()->count() === 0) {
                 $assignmentsCount = fake()->numberBetween(3, 4);
@@ -238,38 +277,45 @@ class DatabaseSeeder extends Seeder
                 $quizzes = $course->quizzes;
             }
 
-            if ($course->resources()->count() === 0) {
-                Resource::create([
+            Resource::firstOrCreate([
+                'course_id' => $course->id,
+                'lesson_id' => null,
+                'title' => 'Course syllabus',
+            ], [
+                'uploaded_by' => $course->instructor_id,
+                'type' => 'file',
+                'path' => 'resources/seed/course-syllabus.pdf',
+                'is_private' => true,
+            ]);
+
+            Resource::firstOrCreate([
+                'course_id' => $course->id,
+                'lesson_id' => null,
+                'title' => 'Course cover image',
+            ], [
+                'uploaded_by' => $course->instructor_id,
+                'type' => 'image',
+                'path' => 'resources/seed/course-cover.svg',
+                'is_private' => false,
+            ]);
+
+            $course->modules->each(function (Module $module) use ($course) {
+                $lesson = $module->lessons()->orderBy('sort_order')->first();
+                if (! $lesson) {
+                    return;
+                }
+
+                Resource::firstOrCreate([
                     'course_id' => $course->id,
-                    'lesson_id' => null,
+                    'lesson_id' => $lesson->id,
+                    'title' => 'Lesson worksheet',
+                ], [
                     'uploaded_by' => $course->instructor_id,
-                    'title' => 'Course syllabus',
-                    'type' => 'file',
-                    'path' => 'resources/seed/course-syllabus.pdf',
+                    'type' => 'worksheet',
+                    'path' => 'resources/seed/lesson-worksheet.pdf',
                     'is_private' => true,
                 ]);
-                Resource::create([
-                    'course_id' => $course->id,
-                    'lesson_id' => null,
-                    'uploaded_by' => $course->instructor_id,
-                    'title' => 'Course cover image',
-                    'type' => 'image',
-                    'path' => 'resources/seed/course-cover.svg',
-                    'is_private' => false,
-                ]);
-
-                $lessons->random(min(2, max(1, $lessons->count())))->each(function (Lesson $lesson) use ($course) {
-                    Resource::create([
-                        'course_id' => $course->id,
-                        'lesson_id' => $lesson->id,
-                        'uploaded_by' => $course->instructor_id,
-                        'title' => 'Lesson worksheet',
-                        'type' => 'worksheet',
-                        'path' => 'resources/seed/lesson-worksheet.pdf',
-                        'is_private' => true,
-                    ]);
-                });
-            }
+            });
 
             $courseLessons[$course->id] = $lessons;
             $courseAssignments[$course->id] = $assignments;

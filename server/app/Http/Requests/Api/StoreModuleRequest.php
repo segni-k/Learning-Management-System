@@ -16,6 +16,8 @@ class StoreModuleRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'takeaways' => ['nullable', 'array'],
+            'takeaways.*' => ['string', 'max:255'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ];
     }

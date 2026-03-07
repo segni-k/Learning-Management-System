@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $course_id
  * @property string $title
  * @property string|null $description
+ * @property array|null $takeaways
  * @property int $sort_order
  */
 
@@ -21,7 +22,12 @@ class Module extends Model
         'course_id',
         'title',
         'description',
+        'takeaways',
         'sort_order',
+    ];
+
+    protected $casts = [
+        'takeaways' => 'array',
     ];
 
     public function course()

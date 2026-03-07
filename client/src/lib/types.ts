@@ -30,6 +30,7 @@ export type Module = {
   course_id: number;
   title: string;
   description?: string | null;
+  takeaways?: string[] | null;
   sort_order: number;
   lessons?: Lesson[];
 };

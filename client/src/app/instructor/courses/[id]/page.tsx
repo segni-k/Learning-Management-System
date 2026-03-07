@@ -62,6 +62,7 @@ export default function InstructorCourseDetailPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [moduleTitle, setModuleTitle] = useState("");
   const [moduleDescription, setModuleDescription] = useState("");
+  const [moduleTakeaways, setModuleTakeaways] = useState<Record<number, string>>({});
   const [lessonTitle, setLessonTitle] = useState<Record<number, string>>({});
   const [editingModule, setEditingModule] = useState<Record<number, string>>({});
   const [editingLesson, setEditingLesson] = useState<Record<number, string>>({});
@@ -182,12 +183,28 @@ export default function InstructorCourseDetailPage() {
   };
 
   const handleUpdateModule = async (module: Module) => {
-    const title = editingModule[module.id];
-    if (!title) return;
+    const title = editingModule[module.id]?.trim();
+    const takeawaysInput = moduleTakeaways[module.id];
+    const payload: Partial<Module> = {};
+
+    if (title) {
+      payload.title = title;
+    }
+
+    if (takeawaysInput !== undefined) {
+      payload.takeaways = parseFlexibleList(takeawaysInput);
+    }
+
+    if (!Object.keys(payload).length) return;
 
     try {
-      await updateModule(module.id, { title });
+      await updateModule(module.id, payload);
       setEditingModule((prev) => ({ ...prev, [module.id]: "" }));
+      setModuleTakeaways((prev) => {
+        const next = { ...prev };
+        delete next[module.id];
+        return next;
+      });
       await load();
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Failed to update module");
@@ -1086,6 +1103,13 @@ export default function InstructorCourseDetailPage() {
           eyebrow="Instructor"
           title={course?.title ?? "Course"}
           description="Manage modules and lessons."
+          action={
+            id ? (
+              <Link className="text-xs text-amber-300" href={`/instructor/courses/${id}/preview`}>
+                Preview course
+              </Link>
+            ) : null
+          }
         />
 
         {status && <p className="text-sm text-rose-300">{status}</p>}
@@ -1183,6 +1207,29 @@ export default function InstructorCourseDetailPage() {
                     Delete
                   </Button>
                 </div>
+              </div>
+
+              <div className="mt-4 grid gap-2 text-xs text-slate-400">
+                <label className="grid gap-2">
+                  Takeaways
+                  <textarea
+                    className="min-h-[72px] rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-200"
+                    value={
+                      moduleTakeaways[module.id] ??
+                      (module.takeaways?.length ? module.takeaways.join("; ") : "")
+                    }
+                    onChange={(event) =>
+                      setModuleTakeaways((prev) => ({
+                        ...prev,
+                        [module.id]: event.target.value,
+                      }))
+                    }
+                    placeholder="Outcome 1; Outcome 2; Outcome 3"
+                  />
+                </label>
+                <p className="text-[11px] text-slate-500">
+                  Separate items with commas or semicolons. Leave blank to clear.
+                </p>
               </div>
 
               <div className="mt-4 space-y-3">

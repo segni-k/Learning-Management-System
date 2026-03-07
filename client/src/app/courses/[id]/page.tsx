@@ -211,7 +211,7 @@ export default function CourseDetailPage() {
   return (
     <RequireAuth>
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-12 sm:px-6 sm:py-16">
-        <header className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+        <header className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center fade-rise">
           <div className="space-y-4">
             <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Course Detail</p>
             <div className="flex flex-wrap items-center gap-2">
@@ -266,13 +266,32 @@ export default function CourseDetailPage() {
               <img
                 src={course?.thumbnail_path || "/images/courses/default.svg"}
                 alt={course?.title ?? "Course"}
-                className="h-[280px] w-full object-cover"
+                className="h-[280px] w-full object-cover float-slow"
                 loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
             </div>
           </div>
         </header>
+
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 stagger-grid">
+          <Card className="p-3">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Hands-on</p>
+            <p className="text-sm font-semibold">Assignments & live feedback</p>
+          </Card>
+          <Card className="p-3">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Curated</p>
+            <p className="text-sm font-semibold">Project-ready resources</p>
+          </Card>
+          <Card className="p-3">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Structured</p>
+            <p className="text-sm font-semibold">Clear milestones per module</p>
+          </Card>
+          <Card className="p-3">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Outcome</p>
+            <p className="text-sm font-semibold">Portfolio-ready deliverables</p>
+          </Card>
+        </section>
 
         {status && <p className="text-sm text-rose-300">{status}</p>}
 
@@ -313,39 +332,73 @@ export default function CourseDetailPage() {
         <Panel>
           <h2 className="text-lg font-semibold">Modules</h2>
           <div className="mt-4 space-y-4">
-            {course?.modules?.map((module) => (
-              <Card key={module.id} className="p-4">
-                <h3 className="text-base font-semibold">{module.title}</h3>
-                <p className="mt-2 text-sm text-slate-400">{module.description ?? ""}</p>
-                <ul className="mt-3 space-y-2 text-sm text-slate-300">
-                  {module.lessons?.map((lesson) => (
-                    <li key={lesson.id} className="flex items-center justify-between">
-                      {lesson.is_published ? (
-                        <Link className="text-slate-200" href={`/courses/${id}/lessons/${lesson.id}`}>
-                          {lesson.title}
-                        </Link>
-                      ) : (
-                        <span>{lesson.title}</span>
-                      )}
-                      {lesson.is_published ? (
-                        <Badge className="border-amber-400/40 text-amber-200">Published</Badge>
-                      ) : (
-                        <Badge>Draft</Badge>
-                      )}
-                      {user?.role === "student" && isEnrolled && lesson.is_published ? (
-                        <Button
-                          type="button"
-                          className="px-3 py-1 text-[10px]"
-                          onClick={() => void handleMarkLessonComplete(lesson.id)}
-                        >
-                          Mark complete
-                        </Button>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            ))}
+            {course?.modules?.map((module) => {
+              const takeaways = module.takeaways?.length
+                ? module.takeaways
+                : (module.lessons?.slice(0, 3).map((lesson) => lesson.title) ?? []);
+
+              return (
+                <Card key={module.id} className="p-4">
+                  <h3 className="text-base font-semibold">{module.title}</h3>
+                  <p className="mt-2 text-sm text-slate-400">{module.description ?? ""}</p>
+                  {takeaways.length ? (
+                    <div className="mt-3 rounded-xl border border-slate-800/70 bg-slate-950/60 p-3">
+                      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                        Key takeaways
+                      </p>
+                      <ul className="mt-2 space-y-1 text-xs text-slate-300">
+                        {takeaways.map((item, index) => (
+                          <li key={`${module.id}-takeaway-${index}`} className="flex items-center gap-2">
+                            <span className="flex h-4 w-4 items-center justify-center rounded-full border border-amber-400/40 text-amber-300">
+                              <svg
+                                aria-hidden
+                                viewBox="0 0 16 16"
+                                className="h-3 w-3"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.7"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M4 8.25l2.25 2.25L12 5.75" />
+                              </svg>
+                            </span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  <ul className="mt-3 space-y-2 text-sm text-slate-300">
+                    {module.lessons?.map((lesson) => (
+                      <li key={lesson.id} className="flex items-center justify-between">
+                        {lesson.is_published ? (
+                          <Link className="text-slate-200" href={`/courses/${id}/lessons/${lesson.id}`}>
+                            {lesson.title}
+                          </Link>
+                        ) : (
+                          <span>{lesson.title}</span>
+                        )}
+                        {lesson.is_published ? (
+                          <Badge className="border-amber-400/40 text-amber-200">Published</Badge>
+                        ) : (
+                          <Badge>Draft</Badge>
+                        )}
+                        {user?.role === "student" && isEnrolled && lesson.is_published ? (
+                          <Button
+                            type="button"
+                            className="px-3 py-1 text-[10px]"
+                            onClick={() => void handleMarkLessonComplete(lesson.id)}
+                          >
+                            Mark complete
+                          </Button>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+              );
+            })}
             {!course?.modules?.length && (
               <p className="text-sm text-slate-400">No modules yet.</p>
             )}

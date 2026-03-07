@@ -211,15 +211,26 @@ export default function LessonPlayerPage() {
   return (
     <RequireAuth>
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-12 sm:px-6 sm:py-16">
-        <header className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Lesson</p>
-          <h1 className="text-2xl font-semibold sm:text-3xl">{lesson?.title ?? "Lesson"}</h1>
-          <p className="text-sm text-slate-400">
-            {course?.title ?? ""} {module ? `· ${module.title}` : ""}
-          </p>
-          <Link className="text-xs text-amber-300" href={`/courses/${courseId}`}>
-            Back to course
-          </Link>
+        <header className="grid gap-4 lg:grid-cols-[140px_1fr] lg:items-center fade-rise">
+          <div className="relative h-28 w-full overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-950/70 sm:h-32 lg:h-28 lg:w-36">
+            <img
+              src={course?.thumbnail_path || "/images/courses/default.svg"}
+              alt={course?.title ?? "Course"}
+              className="h-full w-full object-cover float-slow"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
+          </div>
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Lesson</p>
+            <h1 className="text-2xl font-semibold sm:text-3xl">{lesson?.title ?? "Lesson"}</h1>
+            <p className="text-sm text-slate-400">
+              {course?.title ?? ""} {module ? `· ${module.title}` : ""}
+            </p>
+            <Link className="text-xs text-amber-300" href={`/courses/${courseId}`}>
+              Back to course
+            </Link>
+          </div>
         </header>
 
         {status && <p className="text-sm text-rose-300">{status}</p>}
