@@ -69,11 +69,13 @@ export default function DashboardPage() {
 
   return (
     <RequireAuth>
-      <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-16">
+      <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-12 sm:px-6 sm:py-16">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Dashboard</p>
-            <h1 className="text-3xl font-semibold">Welcome back, {user?.name ?? "there"}</h1>
+            <h1 className="text-2xl font-semibold sm:text-3xl">
+              Welcome back, {user?.name ?? "there"}
+            </h1>
             <p className="text-sm text-slate-400">Your courses and learning activity.</p>
           </div>
           <Button type="button" className="px-5 py-2 text-sm" onClick={() => void logout()}>

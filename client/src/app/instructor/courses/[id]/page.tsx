@@ -37,6 +37,11 @@ import { listQuizAttempts } from "@/lib/quiz-attempts";
 import { listResources, resourceDownloadUrl, uploadResource } from "@/lib/resources";
 import { getCourseRosterProgress } from "@/lib/progress";
 import { RequireRole } from "@/components/require-role";
+import { SectionHeader } from "@/components/ui/section-header";
+import { Panel } from "@/components/ui/panel";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import type {
   Assignment,
   AssignmentSubmission,
@@ -1076,49 +1081,48 @@ export default function InstructorCourseDetailPage() {
 
   return (
     <RequireRole roles={["instructor", "admin"]}>
-      <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-16">
-        <header className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Instructor</p>
-          <h1 className="text-3xl font-semibold">{course?.title ?? "Course"}</h1>
-          <p className="text-sm text-slate-400">Manage modules and lessons.</p>
-        </header>
+      <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-12 sm:px-6 sm:py-16">
+        <SectionHeader
+          eyebrow="Instructor"
+          title={course?.title ?? "Course"}
+          description="Manage modules and lessons."
+        />
 
         {status && <p className="text-sm text-rose-300">{status}</p>}
 
-        <form onSubmit={handleCreateModule} className="glass-panel rounded-2xl p-6">
-          <h2 className="text-lg font-semibold">Create module</h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <label className="grid gap-2 text-sm">
-              Title
-              <input
-                className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2"
-                value={moduleTitle}
-                onChange={(event) => setModuleTitle(event.target.value)}
-                required
-              />
-            </label>
-            <label className="grid gap-2 text-sm">
-              Description
-              <input
-                className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2"
-                value={moduleDescription}
-                onChange={(event) => setModuleDescription(event.target.value)}
-              />
-            </label>
-          </div>
-          <button
-            className="mt-4 rounded-full bg-amber-400 px-5 py-2 text-sm font-semibold text-slate-900"
-            type="submit"
-          >
-            Add module
-          </button>
-        </form>
+        <Panel>
+          <form onSubmit={handleCreateModule}>
+            <h2 className="text-lg font-semibold">Create module</h2>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <label className="grid gap-2 text-sm">
+                Title
+                <input
+                  className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2"
+                  value={moduleTitle}
+                  onChange={(event) => setModuleTitle(event.target.value)}
+                  required
+                />
+              </label>
+              <label className="grid gap-2 text-sm">
+                Description
+                <input
+                  className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2"
+                  value={moduleDescription}
+                  onChange={(event) => setModuleDescription(event.target.value)}
+                />
+              </label>
+            </div>
+            <Button type="submit" variant="primary" className="mt-4 px-5 py-2 text-sm">
+              Add module
+            </Button>
+          </form>
+        </Panel>
 
         <section className="space-y-4">
           {orderedModules.map((module) => (
-            <div
+            <Panel
               key={module.id}
-              className={`glass-panel rounded-2xl p-6 transition ${
+              className={`transition ${
                 dragOverModuleId === module.id ? "ring-2 ring-amber-300/40" : ""
               } ${draggingModuleId === module.id ? "opacity-70" : ""}`}
               draggable
@@ -1150,34 +1154,34 @@ export default function InstructorCourseDetailPage() {
                     }
                     placeholder="Rename module"
                   />
-                  <button
-                    className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                  <Button
                     type="button"
+                    className="px-4 py-2 text-xs"
                     onClick={() => void handleUpdateModule(module)}
                   >
                     Save
-                  </button>
-                  <button
-                    className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                  </Button>
+                  <Button
                     type="button"
+                    className="px-4 py-2 text-xs"
                     onClick={() => void handleMoveModule(module.id, "up")}
                   >
                     Move up
-                  </button>
-                  <button
-                    className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                  </Button>
+                  <Button
                     type="button"
+                    className="px-4 py-2 text-xs"
                     onClick={() => void handleMoveModule(module.id, "down")}
                   >
                     Move down
-                  </button>
-                  <button
-                    className="rounded-full border border-rose-500/40 px-4 py-2 text-xs text-rose-200"
+                  </Button>
+                  <Button
                     type="button"
+                    className="px-4 py-2 text-xs border-rose-500/40 text-rose-200"
                     onClick={() => void handleDeleteModule(module)}
                   >
                     Delete
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -1191,20 +1195,20 @@ export default function InstructorCourseDetailPage() {
                     }
                     placeholder="New lesson title"
                   />
-                  <button
-                    className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                  <Button
                     type="button"
+                    className="px-4 py-2 text-xs"
                     onClick={() => void handleCreateLesson(module)}
                   >
                     Add lesson
-                  </button>
+                  </Button>
                 </div>
 
                 <div className="space-y-2">
                   {getOrderedLessons(module).map((lesson) => (
                     <div key={lesson.id} className="space-y-3">
-                      <div
-                        className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3 transition ${
+                      <Card
+                        className={`flex flex-wrap items-center justify-between gap-3 p-3 transition ${
                           dragOverLesson?.lessonId === lesson.id &&
                           dragOverLesson?.moduleId === module.id
                             ? "ring-2 ring-amber-300/30"
@@ -1232,9 +1236,7 @@ export default function InstructorCourseDetailPage() {
                             <span className="cursor-grab text-xs text-slate-500">::</span>
                             <p className="text-sm font-medium">{lesson.title}</p>
                           </div>
-                          <p className="text-xs text-slate-500">
-                            {lesson.is_published ? "Published" : "Draft"}
-                          </p>
+                          <Badge>{lesson.is_published ? "Published" : "Draft"}</Badge>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           <input
@@ -1248,36 +1250,36 @@ export default function InstructorCourseDetailPage() {
                             }
                             placeholder="Rename lesson"
                           />
-                          <button
-                            className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                          <Button
                             type="button"
+                            className="px-4 py-2 text-xs"
                             onClick={() => void handleUpdateLesson(lesson)}
                           >
                             Save
-                          </button>
-                          <button
-                            className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                          </Button>
+                          <Button
                             type="button"
+                            className="px-4 py-2 text-xs"
                             onClick={() => void handleMoveLesson(module, lesson.id, "up")}
                           >
                             Move up
-                          </button>
-                          <button
-                            className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                          </Button>
+                          <Button
                             type="button"
+                            className="px-4 py-2 text-xs"
                             onClick={() => void handleMoveLesson(module, lesson.id, "down")}
                           >
                             Move down
-                          </button>
-                          <button
-                            className="rounded-full border border-rose-500/40 px-4 py-2 text-xs text-rose-200"
+                          </Button>
+                          <Button
                             type="button"
+                            className="px-4 py-2 text-xs border-rose-500/40 text-rose-200"
                             onClick={() => void handleDeleteLesson(lesson)}
                           >
                             Delete
-                          </button>
+                          </Button>
                         </div>
-                      </div>
+                      </Card>
                       <div className="grid gap-3">
                         <label className="flex items-center gap-2 text-xs text-slate-400">
                           <input
@@ -1299,13 +1301,13 @@ export default function InstructorCourseDetailPage() {
                           placeholder="Lesson content"
                         />
                         <div>
-                          <button
-                            className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                          <Button
                             type="button"
+                            className="px-4 py-2 text-xs"
                             onClick={() => void handleUpdateLessonContent(lesson)}
                           >
                             Save content
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -1315,12 +1317,12 @@ export default function InstructorCourseDetailPage() {
                   )}
                 </div>
               </div>
-            </div>
+            </Panel>
           ))}
         </section>
 
         <section className="grid gap-6 lg:grid-cols-2">
-          <div className="glass-panel rounded-2xl p-6">
+          <Panel>
             <h2 className="text-lg font-semibold">Assignments</h2>
             <form className="mt-4 grid gap-3" onSubmit={handleCreateAssignment}>
               <input
@@ -1353,23 +1355,18 @@ export default function InstructorCourseDetailPage() {
                 />
                 Published
               </label>
-              <button
-                className="rounded-full bg-amber-400 px-5 py-2 text-xs font-semibold text-slate-900"
-                type="submit"
-              >
+              <Button type="submit" variant="primary" className="px-5 py-2 text-xs">
                 Create assignment
-              </button>
+              </Button>
             </form>
 
             <div className="mt-6 space-y-3">
               {(course?.assignments ?? []).map((assignment) => (
                 <div key={assignment.id} className="space-y-3">
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                  <Card className="flex flex-wrap items-center justify-between gap-3 p-3">
                     <div>
                       <p className="text-sm font-semibold">{assignment.title}</p>
-                      <p className="text-xs text-slate-500">
-                        {assignment.is_published ? "Published" : "Draft"}
-                      </p>
+                      <Badge>{assignment.is_published ? "Published" : "Draft"}</Badge>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <input
@@ -1383,44 +1380,44 @@ export default function InstructorCourseDetailPage() {
                         }
                         placeholder="Rename"
                       />
-                      <button
-                        className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                      <Button
                         type="button"
+                        className="px-4 py-2 text-xs"
                         onClick={() => void handleUpdateAssignment(assignment)}
                       >
                         Save
-                      </button>
-                      <button
-                        className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                      </Button>
+                      <Button
                         type="button"
+                        className="px-4 py-2 text-xs"
                         onClick={() => void handleToggleAssignmentPublish(assignment)}
                       >
                         Toggle publish
-                      </button>
-                      <button
-                        className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                      </Button>
+                      <Button
                         type="button"
+                        className="px-4 py-2 text-xs"
                         onClick={() => void toggleAssignmentSubmissions(assignment)}
                       >
                         Submissions
-                      </button>
-                      <button
-                        className="rounded-full border border-rose-500/40 px-4 py-2 text-xs text-rose-200"
+                      </Button>
+                      <Button
                         type="button"
+                        className="px-4 py-2 text-xs border-rose-500/40 text-rose-200"
                         onClick={() => void handleDeleteAssignment(assignment)}
                       >
                         Delete
-                      </button>
+                      </Button>
                     </div>
-                  </div>
+                  </Card>
                   {expandedAssignment[assignment.id] ? (
-                    <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                    <Card className="p-4">
                       <h3 className="text-sm font-semibold">Submissions</h3>
                       <div className="mt-3 space-y-3">
                         {(assignmentSubmissions[assignment.id] ?? []).map((submission) => (
-                          <div
+                          <Card
                             key={submission.id}
-                            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950/70 p-3"
+                            className="flex flex-wrap items-center justify-between gap-3 p-3"
                           >
                             <div>
                               <p className="text-sm font-semibold">{submission.user?.name ?? "Student"}</p>
@@ -1440,15 +1437,15 @@ export default function InstructorCourseDetailPage() {
                                 }
                                 placeholder="Score"
                               />
-                              <button
-                                className="rounded-full border border-slate-700 px-3 py-1 text-xs"
+                              <Button
                                 type="button"
+                                className="px-3 py-1 text-xs"
                                 onClick={() =>
                                   void handleGradeSubmission(assignment.id, submission.id)
                                 }
                               >
                                 Grade
-                              </button>
+                              </Button>
                               {submission.file_path ? (
                                 <a
                                   className="text-xs text-amber-300"
@@ -1458,13 +1455,13 @@ export default function InstructorCourseDetailPage() {
                                 </a>
                               ) : null}
                             </div>
-                          </div>
+                          </Card>
                         ))}
                         {!(assignmentSubmissions[assignment.id] ?? []).length && (
                           <p className="text-sm text-slate-400">No submissions yet.</p>
                         )}
                       </div>
-                    </div>
+                    </Card>
                   ) : null}
                 </div>
               ))}
@@ -1472,9 +1469,9 @@ export default function InstructorCourseDetailPage() {
                 <p className="text-sm text-slate-400">No assignments yet.</p>
               )}
             </div>
-          </div>
+          </Panel>
 
-          <div className="glass-panel rounded-2xl p-6">
+          <Panel>
             <h2 className="text-lg font-semibold">Quizzes</h2>
             <form className="mt-4 grid gap-3" onSubmit={handleCreateQuiz}>
               <input
@@ -1509,23 +1506,18 @@ export default function InstructorCourseDetailPage() {
                 />
                 Published
               </label>
-              <button
-                className="rounded-full bg-amber-400 px-5 py-2 text-xs font-semibold text-slate-900"
-                type="submit"
-              >
+              <Button type="submit" variant="primary" className="px-5 py-2 text-xs">
                 Create quiz
-              </button>
+              </Button>
             </form>
 
             <div className="mt-6 space-y-3">
               {(course?.quizzes ?? []).map((quiz) => (
                 <div key={quiz.id} className="space-y-3">
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                  <Card className="flex flex-wrap items-center justify-between gap-3 p-3">
                     <div>
                       <p className="text-sm font-semibold">{quiz.title}</p>
-                      <p className="text-xs text-slate-500">
-                        {quiz.is_published ? "Published" : "Draft"}
-                      </p>
+                      <Badge>{quiz.is_published ? "Published" : "Draft"}</Badge>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <input
@@ -1539,67 +1531,67 @@ export default function InstructorCourseDetailPage() {
                         }
                         placeholder="Rename"
                       />
-                      <button
-                        className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                      <Button
                         type="button"
+                        className="px-4 py-2 text-xs"
                         onClick={() => void handleUpdateQuiz(quiz)}
                       >
                         Save
-                      </button>
-                      <button
-                        className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                      </Button>
+                      <Button
                         type="button"
+                        className="px-4 py-2 text-xs"
                         onClick={() => void handleToggleQuizPublish(quiz)}
                       >
                         Toggle publish
-                      </button>
-                      <button
-                        className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                      </Button>
+                      <Button
                         type="button"
+                        className="px-4 py-2 text-xs"
                         onClick={() => void toggleQuizQuestions(quiz)}
                       >
                         Questions
-                      </button>
-                      <button
-                        className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                      </Button>
+                      <Button
                         type="button"
+                        className="px-4 py-2 text-xs"
                         onClick={() => void toggleQuizAttempts(quiz)}
                       >
                         Attempts
-                      </button>
-                      <button
-                        className="rounded-full border border-rose-500/40 px-4 py-2 text-xs text-rose-200"
+                      </Button>
+                      <Button
                         type="button"
+                        className="px-4 py-2 text-xs border-rose-500/40 text-rose-200"
                         onClick={() => void handleDeleteQuiz(quiz)}
                       >
                         Delete
-                      </button>
+                      </Button>
                     </div>
-                  </div>
+                  </Card>
                   {expandedQuizAttempts[quiz.id] ? (
-                    <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                    <Card className="p-4">
                       <h3 className="text-sm font-semibold">Recent attempts</h3>
                       <div className="mt-3 space-y-3">
                         {(quizAttempts[quiz.id] ?? []).map((attempt) => (
-                          <div
+                          <Card
                             key={attempt.id}
-                            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950/70 p-3"
+                            className="flex flex-wrap items-center justify-between gap-3 p-3"
                           >
                             <div>
                               <p className="text-sm font-semibold">{attempt.user?.name ?? "Student"}</p>
                               <p className="text-xs text-slate-500">Completed {attempt.completed_at}</p>
                             </div>
                             <p className="text-xs text-slate-300">Score {attempt.score ?? "-"}</p>
-                          </div>
+                          </Card>
                         ))}
                         {!(quizAttempts[quiz.id] ?? []).length && (
                           <p className="text-sm text-slate-400">No attempts yet.</p>
                         )}
                       </div>
-                    </div>
+                    </Card>
                   ) : null}
                   {expandedQuiz[quiz.id] ? (
-                  <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                  <Card className="mt-4 p-4">
                     <h3 className="text-sm font-semibold">Quiz questions</h3>
                     <div className="mt-3 grid gap-3">
                       <input
@@ -1638,13 +1630,14 @@ export default function InstructorCourseDetailPage() {
                           type="number"
                           min={1}
                         />
-                        <button
-                          className="rounded-full bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-900"
+                        <Button
                           type="button"
+                          variant="primary"
+                          className="px-4 py-2 text-xs"
                           onClick={() => void handleCreateQuestion(quiz)}
                         >
                           Add question
-                        </button>
+                        </Button>
                       </div>
                       <input
                         className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs"
@@ -1688,13 +1681,13 @@ export default function InstructorCourseDetailPage() {
                             "Bulk import: JSON array or lines like\nQuestion?|multiple_choice|1|A,B,C|A"
                           }
                         />
-                        <button
-                          className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                        <Button
                           type="button"
+                          className="px-4 py-2 text-xs"
                           onClick={() => void handleBulkImport(quiz)}
                         >
                           Import
-                        </button>
+                        </Button>
                       </div>
                       <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
                         <label className="flex items-center gap-2">
@@ -1729,9 +1722,9 @@ export default function InstructorCourseDetailPage() {
 
                     <div className="mt-4 space-y-2">
                       {orderedQuestions(quiz.id).map((question) => (
-                        <div
+                        <Card
                           key={question.id}
-                          className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3 ${
+                          className={`flex flex-wrap items-center justify-between gap-3 p-3 ${
                             dragOverQuestion?.quizId === quiz.id &&
                             dragOverQuestion?.questionId === question.id
                               ? "ring-2 ring-amber-300/30"
@@ -1850,28 +1843,28 @@ export default function InstructorCourseDetailPage() {
                               }
                               placeholder="Rename"
                             />
-                            <button
-                              className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+                            <Button
                               type="button"
+                              className="px-4 py-2 text-xs"
                               onClick={() => void handleUpdateQuestion(quiz.id, question)}
                             >
                               Save
-                            </button>
-                            <button
-                              className="rounded-full border border-rose-500/40 px-4 py-2 text-xs text-rose-200"
+                            </Button>
+                            <Button
                               type="button"
+                              className="px-4 py-2 text-xs border-rose-500/40 text-rose-200"
                               onClick={() => void handleDeleteQuestion(quiz.id, question)}
                             >
                               Delete
-                            </button>
+                            </Button>
                           </div>
-                        </div>
+                        </Card>
                       ))}
                       {!orderedQuestions(quiz.id).length && (
                         <p className="text-sm text-slate-400">No questions yet.</p>
                       )}
                     </div>
-                  </div>
+                  </Card>
                   ) : null}
                 </div>
               ))}
@@ -1882,7 +1875,7 @@ export default function InstructorCourseDetailPage() {
           </div>
         </section>
 
-        <section className="glass-panel rounded-2xl p-6">
+        <Panel>
           <h2 className="text-lg font-semibold">Resources</h2>
           <form className="mt-4 grid gap-3" onSubmit={handleUploadResource}>
             <div className="grid gap-3 md:grid-cols-2">
@@ -1933,21 +1926,14 @@ export default function InstructorCourseDetailPage() {
               />
               Private to enrolled learners
             </label>
-            <button
-              className="rounded-full border border-slate-700 px-4 py-2 text-xs"
-              type="submit"
-              disabled={resourceUploading}
-            >
+            <Button type="submit" className="px-4 py-2 text-xs" disabled={resourceUploading}>
               {resourceUploading ? "Uploading..." : "Upload resource"}
-            </button>
+            </Button>
           </form>
 
           <div className="mt-4 space-y-3">
             {resources.map((resource) => (
-              <div
-                key={resource.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3"
-              >
+              <Card key={resource.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
                 <div>
                   <p className="text-sm font-semibold">{resource.title}</p>
                   <p className="text-xs text-slate-500">{resource.type}</p>
@@ -1955,22 +1941,22 @@ export default function InstructorCourseDetailPage() {
                 <a className="text-xs text-amber-300" href={resourceDownloadUrl(resource.id)}>
                   Download
                 </a>
-              </div>
+              </Card>
             ))}
             {!resources.length && <p className="text-sm text-slate-400">No resources yet.</p>}
           </div>
-        </section>
+        </Panel>
 
-        <section className="glass-panel rounded-2xl p-6">
+        <Panel>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold">Roster progress</h2>
-            <button
-              className="rounded-full border border-slate-700 px-4 py-2 text-xs"
+            <Button
               type="button"
+              className="px-4 py-2 text-xs"
               onClick={() => void handleToggleRosterProgress()}
             >
               {showRosterProgress ? "Hide" : "Load"}
-            </button>
+            </Button>
           </div>
           {showRosterProgress ? (
             <div className="mt-4 space-y-3">
@@ -1995,23 +1981,16 @@ export default function InstructorCourseDetailPage() {
                     max={100}
                   />
                 </label>
-                <button
-                  className="rounded-full border border-slate-700 px-4 py-2 text-xs"
-                  type="button"
-                  onClick={downloadRosterCsv}
-                >
+                <Button type="button" className="px-4 py-2 text-xs" onClick={downloadRosterCsv}>
                   Download CSV
-                </button>
+                </Button>
               </div>
               {rosterLoading ? <p className="text-sm text-slate-400">Loading roster...</p> : null}
               {!rosterLoading && !filteredRoster.length ? (
                 <p className="text-sm text-slate-400">No progress data yet.</p>
               ) : null}
               {filteredRoster.map((row) => (
-                <div
-                  key={row.user_id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3"
-                >
+                <Card key={row.user_id} className="flex flex-wrap items-center justify-between gap-3 p-3">
                   <div>
                     <p className="text-sm font-semibold">{row.user?.name ?? "Student"}</p>
                     <p className="text-xs text-slate-500">{row.user?.email ?? ""}</p>
@@ -2019,11 +1998,11 @@ export default function InstructorCourseDetailPage() {
                   <div className="text-xs text-slate-400">
                     {row.completed}/{row.total} lessons · Avg {row.average_progress}%
                   </div>
-                </div>
+                </Card>
               ))}
             </div>
           ) : null}
-        </section>
+        </Panel>
       </main>
     </RequireRole>
   );

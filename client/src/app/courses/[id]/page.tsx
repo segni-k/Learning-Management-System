@@ -210,12 +210,12 @@ export default function CourseDetailPage() {
 
   return (
     <RequireAuth>
-      <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-16">
+      <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-12 sm:px-6 sm:py-16">
         <header className="space-y-2">
           <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Course Detail</p>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-semibold">{course?.title ?? "Loading..."}</h1>
+              <h1 className="text-2xl font-semibold sm:text-3xl">{course?.title ?? "Loading..."}</h1>
               <p className="text-sm text-slate-400">{course?.description ?? ""}</p>
             </div>
             {user?.role === "student" ? (
