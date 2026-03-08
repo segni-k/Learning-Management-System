@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   getResumeLesson,
   getStudentOverview,
@@ -31,32 +31,41 @@ export default function DashboardPage() {
   const [coursework, setCoursework] = useState<StudentCoursework | null>(null);
   const [resumeLesson, setResumeLesson] = useState<ResumeLesson>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadDashboard = useCallback(async () => {
     if (!user) return;
 
-    const load = async () => {
-      try {
-        const [overviewResponse, notificationsResponse, activityResponse, courseworkResponse, resumeResponse] =
-          await Promise.all([
-            getStudentOverview(),
-            listStudentNotifications(),
-            listStudentActivity({ submissions_per_page: 5, attempts_per_page: 5 }),
-            listStudentCoursework({ assignments_per_page: 5, quizzes_per_page: 5 }),
-            getResumeLesson(),
-          ]);
-        setOverview(overviewResponse.data);
-        setNotifications(notificationsResponse.data);
-        setActivity(activityResponse.data);
-        setCoursework(courseworkResponse.data);
-        setResumeLesson(resumeResponse.data);
-      } catch (error) {
-        setStatus(error instanceof Error ? error.message : "Failed to load courses");
-      }
-    };
+    setIsLoading(true);
+    setStatus(null);
 
-    void load();
+    try {
+      const [overviewResponse, notificationsResponse, activityResponse, courseworkResponse, resumeResponse] =
+        await Promise.all([
+          getStudentOverview(),
+          listStudentNotifications(),
+          listStudentActivity({ submissions_per_page: 10, attempts_per_page: 10 }),
+          listStudentCoursework({ assignments_per_page: 10, quizzes_per_page: 10 }),
+          getResumeLesson(),
+        ]);
+
+      setOverview(overviewResponse.data);
+      setNotifications(notificationsResponse.data);
+      setActivity(activityResponse.data);
+      setCoursework(courseworkResponse.data);
+      setResumeLesson(resumeResponse.data);
+      setLastUpdatedAt(new Date().toISOString());
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Failed to load dashboard data");
+    } finally {
+      setIsLoading(false);
+    }
   }, [user]);
+
+  useEffect(() => {
+    void loadDashboard();
+  }, [loadDashboard]);
 
   const recentSubmissions = useMemo(
     () => activity?.assignment_submissions?.slice(0, 5) ?? [],
@@ -66,6 +75,62 @@ export default function DashboardPage() {
     () => activity?.quiz_attempts?.slice(0, 5) ?? [],
     [activity]
   );
+
+  const snapshot = useMemo(() => {
+    const courses = overview?.courses ?? [];
+    const totalLessons = courses.reduce((sum, course) => sum + course.total_lessons, 0);
+    const completedLessons = courses.reduce((sum, course) => sum + course.completed_lessons, 0);
+    const averageProgress = courses.length
+      ? Math.round(courses.reduce((sum, course) => sum + course.average_progress, 0) / courses.length)
+      : 0;
+
+    const assignments = coursework?.assignments ?? [];
+    const quizzes = coursework?.quizzes ?? [];
+
+    return {
+      courses: courses.length,
+      totalLessons,
+      completedLessons,
+      averageProgress,
+      pendingAssignments: assignments.filter((item) => item.status === "pending" || item.status === "overdue")
+        .length,
+      attemptedQuizzes: quizzes.filter((item) => item.status === "attempted").length,
+      overdueAssignments: assignments.filter((item) => item.status === "overdue").length,
+      gradedAssignments: assignments.filter((item) => item.status === "graded").length,
+      notifications:
+        (notifications?.upcoming_assignments?.length ?? 0) +
+        (notifications?.new_lessons?.length ?? 0) +
+        (notifications?.new_quizzes?.length ?? 0),
+    };
+  }, [overview, coursework, notifications]);
+
+  const focusAssignments = useMemo(
+    () =>
+      (coursework?.assignments ?? [])
+        .filter((item) => item.status === "overdue" || item.status === "pending")
+        .slice(0, 5),
+    [coursework]
+  );
+
+  const focusQuizzes = useMemo(
+    () => (coursework?.quizzes ?? []).filter((item) => item.status === "not_started").slice(0, 5),
+    [coursework]
+  );
+
+  const topCourses = useMemo(
+    () =>
+      [...(overview?.courses ?? [])]
+        .sort((a, b) => b.average_progress - a.average_progress)
+        .slice(0, 3),
+    [overview]
+  );
+
+  const formatDate = (value?: string | null) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  };
 
   const dashboardBenefits = [
     {
@@ -84,19 +149,117 @@ export default function DashboardPage() {
 
   return (
     <RequireAuth>
-      <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-12 sm:px-6 sm:py-16">
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-12 sm:px-6 sm:py-16">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Dashboard</p>
             <h1 className="text-2xl font-semibold sm:text-3xl">
               Welcome back, {user?.name ?? "there"}
             </h1>
-            <p className="text-sm text-slate-400">Your courses and learning activity.</p>
+            <p className="text-sm text-slate-400">Your learning hub with progress, tasks, and activity in one place.</p>
+            {lastUpdatedAt ? (
+              <p className="mt-1 text-xs text-slate-500">Last updated: {new Date(lastUpdatedAt).toLocaleString()}</p>
+            ) : null}
           </div>
-          <Button type="button" className="px-5 py-2 text-sm" onClick={() => void logout()}>
-            Sign out
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button type="button" className="px-5 py-2 text-sm" onClick={() => void loadDashboard()}>
+              {isLoading ? "Refreshing..." : "Refresh"}
+            </Button>
+            <Button type="button" className="px-5 py-2 text-sm" onClick={() => void logout()}>
+              Sign out
+            </Button>
+          </div>
         </header>
+
+        <Panel>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold">Continue learning</h2>
+              <p className="text-xs text-slate-500">Jump back into your latest lesson or open your top courses.</p>
+            </div>
+            <Link className="text-sm text-amber-300" href="/courses">
+              View all courses
+            </Link>
+          </div>
+          <div className="mt-4 grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
+            <Card className="p-4">
+              {resumeLesson ? (
+                <>
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Resume lesson</p>
+                  <p className="mt-2 text-base font-semibold">{resumeLesson.lesson?.title}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {resumeLesson.course?.title} · {resumeLesson.module?.title}
+                  </p>
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-900">
+                    <div
+                      className="h-full rounded-full bg-amber-400"
+                      style={{ width: `${Math.min(Math.max(resumeLesson.progress_percent ?? 0, 0), 100)}%` }}
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-slate-400">Progress {resumeLesson.progress_percent}%</p>
+                  <Link
+                    className="mt-3 inline-flex text-xs font-medium text-amber-300"
+                    href={`/courses/${resumeLesson.course?.id}`}
+                  >
+                    Continue now
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-slate-200">No lesson to resume yet.</p>
+                  <p className="mt-1 text-xs text-slate-500">Open a course to start your learning path.</p>
+                </>
+              )}
+            </Card>
+            <Card className="p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Top course progress</p>
+              <div className="mt-3 space-y-3">
+                {topCourses.map((course) => (
+                  <div key={`top-${course.id}`}>
+                    <div className="flex items-center justify-between text-xs">
+                      <p className="truncate text-slate-200">{course.title}</p>
+                      <span className="text-slate-400">{course.average_progress}%</span>
+                    </div>
+                    <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-900">
+                      <div
+                        className="h-full rounded-full bg-amber-400"
+                        style={{ width: `${Math.min(Math.max(course.average_progress, 0), 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+                {!topCourses.length && <p className="text-xs text-slate-500">No enrolled courses yet.</p>}
+              </div>
+            </Card>
+          </div>
+        </Panel>
+
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className="p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Enrolled courses</p>
+            <p className="mt-2 text-2xl font-semibold">{snapshot.courses}</p>
+            <p className="mt-1 text-xs text-slate-400">Active learning spaces</p>
+          </Card>
+          <Card className="p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Lesson progress</p>
+            <p className="mt-2 text-2xl font-semibold">
+              {snapshot.completedLessons}/{snapshot.totalLessons}
+            </p>
+            <p className="mt-1 text-xs text-slate-400">Avg progress {snapshot.averageProgress}%</p>
+          </Card>
+          <Card className="p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Pending work</p>
+            <p className="mt-2 text-2xl font-semibold">{snapshot.pendingAssignments}</p>
+            <p className="mt-1 text-xs text-slate-400">{snapshot.overdueAssignments} overdue items</p>
+          </Card>
+          <Card className="p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Activity signal</p>
+            <p className="mt-2 text-2xl font-semibold">{snapshot.notifications}</p>
+            <p className="mt-1 text-xs text-slate-400">
+              Alerts + updates · {snapshot.attemptedQuizzes} attempted quizzes
+            </p>
+          </Card>
+        </section>
 
         <Panel>
           <div className="flex items-center justify-between">
@@ -119,6 +282,12 @@ export default function DashboardPage() {
                   {course.completed_lessons}/{course.total_lessons} lessons completed
                 </p>
                 <p className="text-xs text-slate-500">Avg progress: {course.average_progress}%</p>
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-900">
+                  <div
+                    className="h-full rounded-full bg-amber-400"
+                    style={{ width: `${Math.min(Math.max(course.average_progress, 0), 100)}%` }}
+                  />
+                </div>
                 <div className="mt-3 flex flex-wrap gap-3 text-xs">
                   <Link className="text-amber-300" href={`/courses/${course.id}`}>
                     Open course
@@ -142,6 +311,65 @@ export default function DashboardPage() {
             )}
           </div>
         </Panel>
+
+        <section className="grid gap-6 lg:grid-cols-2">
+          <Panel>
+            <h2 className="text-lg font-semibold">Focus now</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Prioritized actions from your coursework and assessments.
+            </p>
+            <div className="mt-4 space-y-3">
+              {focusAssignments.map((assignment) => (
+                <Card key={`focus-assignment-${assignment.id}`} className="p-3">
+                  <p className="text-sm font-medium">{assignment.title}</p>
+                  <p className="text-xs text-slate-500">
+                    {assignment.status.toUpperCase()} · Due {assignment.due_at ?? "-"}
+                  </p>
+                </Card>
+              ))}
+              {!focusAssignments.length && (
+                <p className="text-sm text-slate-400">No urgent assignments right now.</p>
+              )}
+            </div>
+            <div className="mt-4 space-y-3">
+              {focusQuizzes.map((quiz) => (
+                <Card key={`focus-quiz-${quiz.id}`} className="p-3">
+                  <p className="text-sm font-medium">{quiz.title}</p>
+                  <p className="text-xs text-slate-500">
+                    Not started · Attempts left {quiz.attempts_remaining ?? quiz.max_attempts ?? "-"}
+                  </p>
+                </Card>
+              ))}
+              {!focusQuizzes.length && (
+                <p className="text-sm text-slate-400">No pending quizzes right now.</p>
+              )}
+            </div>
+          </Panel>
+          <Panel>
+            <h2 className="text-lg font-semibold">Learning performance</h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <Card className="p-3">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Assignments graded</p>
+                <p className="mt-2 text-xl font-semibold">{snapshot.gradedAssignments}</p>
+              </Card>
+              <Card className="p-3">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Quiz attempts made</p>
+                <p className="mt-2 text-xl font-semibold">{snapshot.attemptedQuizzes}</p>
+              </Card>
+              <Card className="p-3 sm:col-span-2">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Resume lesson</p>
+                {resumeLesson ? (
+                  <>
+                    <p className="mt-2 text-sm font-medium">{resumeLesson.lesson?.title}</p>
+                    <p className="text-xs text-slate-500">{resumeLesson.course?.title} · {resumeLesson.module?.title}</p>
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm text-slate-400">No lesson to resume yet.</p>
+                )}
+              </Card>
+            </div>
+          </Panel>
+        </section>
 
         <Panel>
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -189,7 +417,7 @@ export default function DashboardPage() {
                 <Card key={assignment.id} className="p-3">
                   <p className="text-sm font-semibold">{assignment.title}</p>
                   <p className="text-xs text-slate-500">
-                    {assignment.course_id ? `Course #${assignment.course_id}` : ""} · Due {assignment.due_at}
+                    {assignment.course_id ? `Course #${assignment.course_id}` : ""} · Due {formatDate(assignment.due_at)}
                   </p>
                 </Card>
               ))}
@@ -271,7 +499,7 @@ export default function DashboardPage() {
                 <Card key={`submission-${item.id}`} className="p-3">
                   <p className="text-sm font-medium">Assignment submitted</p>
                   <p className="text-xs text-slate-500">
-                    {item.assignment?.title} · {item.submitted_at}
+                    {item.assignment?.title} · {formatDate(item.submitted_at)}
                   </p>
                 </Card>
               ))}
@@ -279,7 +507,7 @@ export default function DashboardPage() {
                 <Card key={`attempt-${item.id}`} className="p-3">
                   <p className="text-sm font-medium">Quiz attempt</p>
                   <p className="text-xs text-slate-500">
-                    {item.quiz?.title} · {item.completed_at} · Score {item.score ?? "-"}
+                    {item.quiz?.title} · {formatDate(item.completed_at)} · Score {item.score ?? "-"}
                   </p>
                 </Card>
               ))}
@@ -299,7 +527,7 @@ export default function DashboardPage() {
                 <Card key={assignment.id} className="p-3">
                   <p className="text-sm font-medium">{assignment.title}</p>
                   <p className="text-xs text-slate-500">
-                    {assignment.status} · Due {assignment.due_at ?? "-"}
+                    {assignment.status} · Due {formatDate(assignment.due_at)}
                   </p>
                 </Card>
               ))}
@@ -321,6 +549,34 @@ export default function DashboardPage() {
                 <p className="text-sm text-slate-400">No quizzes found.</p>
               )}
             </div>
+          </div>
+        </Panel>
+
+        <Panel>
+          <h2 className="text-lg font-semibold">Everything at a glance</h2>
+          <p className="mt-2 text-sm text-slate-400">
+            You are viewing courses, progress, resume point, assignments, quizzes, notifications,
+            and recent activity from your student LMS endpoints in one dashboard.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Card className="p-3">
+              <p className="text-xs text-slate-500">Courses loaded</p>
+              <p className="text-lg font-semibold">{overview?.courses?.length ?? 0}</p>
+            </Card>
+            <Card className="p-3">
+              <p className="text-xs text-slate-500">Assignments loaded</p>
+              <p className="text-lg font-semibold">{coursework?.assignments?.length ?? 0}</p>
+            </Card>
+            <Card className="p-3">
+              <p className="text-xs text-slate-500">Quizzes loaded</p>
+              <p className="text-lg font-semibold">{coursework?.quizzes?.length ?? 0}</p>
+            </Card>
+            <Card className="p-3">
+              <p className="text-xs text-slate-500">Activity items loaded</p>
+              <p className="text-lg font-semibold">
+                {(activity?.assignment_submissions?.length ?? 0) + (activity?.quiz_attempts?.length ?? 0)}
+              </p>
+            </Card>
           </div>
         </Panel>
       </main>
