@@ -44,10 +44,12 @@ export default function StudentNotificationsPage() {
             <h2 className="text-lg font-semibold">Upcoming assignments</h2>
             <div className="mt-4 space-y-3">
               {(notifications?.upcoming_assignments ?? []).map((item) => (
-                <Card key={`assignment-${item.id}`} className="p-3">
-                  <p className="text-sm font-semibold">{item.title}</p>
-                  <p className="text-xs text-slate-500">Due {item.due_at ?? "-"}</p>
-                </Card>
+                <Link key={`assignment-${item.id}`} href={item.course?.id ? `/courses/${item.course.id}` : "/dashboard"} className="block">
+                  <Card className="p-3">
+                    <p className="text-sm font-semibold">{item.title}</p>
+                    <p className="text-xs text-slate-500">Due {item.due_at ?? "-"}</p>
+                  </Card>
+                </Link>
               ))}
               {!(notifications?.upcoming_assignments ?? []).length && (
                 <p className="text-sm text-slate-400">No upcoming assignments.</p>
@@ -58,10 +60,12 @@ export default function StudentNotificationsPage() {
             <h2 className="text-lg font-semibold">New lessons</h2>
             <div className="mt-4 space-y-3">
               {(notifications?.new_lessons ?? []).map((item) => (
-                <Card key={`lesson-${item.id}`} className="p-3">
-                  <p className="text-sm font-semibold">{item.title}</p>
-                  <p className="text-xs text-slate-500">Added {item.created_at ?? "-"}</p>
-                </Card>
+                <Link key={`lesson-${item.id}`} href={item.course?.id ? `/courses/${item.course.id}` : "/dashboard"} className="block">
+                  <Card className="p-3">
+                    <p className="text-sm font-semibold">{item.title}</p>
+                    <p className="text-xs text-slate-500">Added {item.created_at ?? "-"}</p>
+                  </Card>
+                </Link>
               ))}
               {!(notifications?.new_lessons ?? []).length && (
                 <p className="text-sm text-slate-400">No new lessons.</p>
@@ -72,10 +76,12 @@ export default function StudentNotificationsPage() {
             <h2 className="text-lg font-semibold">New quizzes</h2>
             <div className="mt-4 space-y-3">
               {(notifications?.new_quizzes ?? []).map((item) => (
-                <Card key={`quiz-${item.id}`} className="p-3">
-                  <p className="text-sm font-semibold">{item.title}</p>
-                  <p className="text-xs text-slate-500">Added {item.created_at ?? "-"}</p>
-                </Card>
+                <Link key={`quiz-${item.id}`} href={item.course?.id ? `/courses/${item.course.id}` : "/dashboard"} className="block">
+                  <Card className="p-3">
+                    <p className="text-sm font-semibold">{item.title}</p>
+                    <p className="text-xs text-slate-500">Added {item.created_at ?? "-"}</p>
+                  </Card>
+                </Link>
               ))}
               {!(notifications?.new_quizzes ?? []).length && (
                 <p className="text-sm text-slate-400">No new quizzes.</p>

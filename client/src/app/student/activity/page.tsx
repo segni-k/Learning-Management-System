@@ -70,11 +70,13 @@ export default function StudentActivityPage() {
             </div>
             <div className="mt-4 space-y-3">
               {(activity?.assignment_submissions ?? []).map((item) => (
-                <Card key={item.id} className="p-3">
-                  <p className="text-sm font-semibold">{item.assignment?.title}</p>
-                  <p className="text-xs text-slate-500">Submitted {item.submitted_at}</p>
-                  <p className="text-xs text-slate-500">Score {item.score ?? "-"}</p>
-                </Card>
+                <Link key={item.id} href={item.course?.id ? `/courses/${item.course.id}` : "/dashboard"} className="block">
+                  <Card className="p-3">
+                    <p className="text-sm font-semibold">{item.assignment?.title}</p>
+                    <p className="text-xs text-slate-500">Submitted {item.submitted_at}</p>
+                    <p className="text-xs text-slate-500">Score {item.score ?? "-"}</p>
+                  </Card>
+                </Link>
               ))}
               {!(activity?.assignment_submissions ?? []).length && (
                 <p className="text-sm text-slate-400">No submissions yet.</p>
@@ -103,11 +105,13 @@ export default function StudentActivityPage() {
             </div>
             <div className="mt-4 space-y-3">
               {(activity?.quiz_attempts ?? []).map((item) => (
-                <Card key={item.id} className="p-3">
-                  <p className="text-sm font-semibold">{item.quiz?.title}</p>
-                  <p className="text-xs text-slate-500">Completed {item.completed_at}</p>
-                  <p className="text-xs text-slate-500">Score {item.score ?? "-"}</p>
-                </Card>
+                <Link key={item.id} href={item.course?.id ? `/courses/${item.course.id}` : "/dashboard"} className="block">
+                  <Card className="p-3">
+                    <p className="text-sm font-semibold">{item.quiz?.title}</p>
+                    <p className="text-xs text-slate-500">Completed {item.completed_at}</p>
+                    <p className="text-xs text-slate-500">Score {item.score ?? "-"}</p>
+                  </Card>
+                </Link>
               ))}
               {!(activity?.quiz_attempts ?? []).length && (
                 <p className="text-sm text-slate-400">No attempts yet.</p>

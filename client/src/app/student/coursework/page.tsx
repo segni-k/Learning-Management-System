@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { RequireAuth } from "@/components/require-auth";
 import { listStudentCoursework } from "@/lib/student";
 import { Panel } from "@/components/ui/panel";
@@ -10,12 +11,14 @@ import { Button } from "@/components/ui/button";
 import type { StudentCoursework } from "@/lib/types";
 
 export default function StudentCourseworkPage() {
+  const searchParams = useSearchParams();
   const [coursework, setCoursework] = useState<StudentCoursework | null>(null);
   const [status, setStatus] = useState<string | null>(null);
-  const [assignmentStatus, setAssignmentStatus] = useState("");
-  const [quizStatus, setQuizStatus] = useState("");
-  const [dueFrom, setDueFrom] = useState("");
-  const [dueTo, setDueTo] = useState("");
+  const [assignmentStatus, setAssignmentStatus] = useState(searchParams.get("assignments_status") ?? "");
+  const [quizStatus, setQuizStatus] = useState(searchParams.get("quiz_status") ?? "");
+  const [dueFrom, setDueFrom] = useState(searchParams.get("due_from") ?? "");
+  const [dueTo, setDueTo] = useState(searchParams.get("due_to") ?? "");
+  const [courseIdFilter, setCourseIdFilter] = useState(searchParams.get("course_id") ?? "");
   const [assignmentsPage, setAssignmentsPage] = useState(1);
   const [quizzesPage, setQuizzesPage] = useState(1);
 
@@ -23,6 +26,7 @@ export default function StudentCourseworkPage() {
     const load = async () => {
       try {
         const response = await listStudentCoursework({
+          course_id: courseIdFilter ? Number(courseIdFilter) : undefined,
           assignments_status: assignmentStatus || undefined,
           quiz_status: quizStatus || undefined,
           due_from: dueFrom || undefined,
@@ -39,7 +43,7 @@ export default function StudentCourseworkPage() {
     };
 
     void load();
-  }, [assignmentStatus, quizStatus, dueFrom, dueTo, assignmentsPage, quizzesPage]);
+  }, [courseIdFilter, assignmentStatus, quizStatus, dueFrom, dueTo, assignmentsPage, quizzesPage]);
 
   return (
     <RequireAuth>
@@ -58,6 +62,17 @@ export default function StudentCourseworkPage() {
         <Panel>
           <h2 className="text-lg font-semibold">Filters</h2>
           <div className="mt-4 grid gap-3 md:grid-cols-4">
+            <label className="grid gap-2 text-xs text-slate-400">
+              Course ID
+              <input
+                className="rounded-lg border border-slate-800/80 bg-slate-950 px-3 py-2 text-xs"
+                type="number"
+                min={1}
+                value={courseIdFilter}
+                onChange={(event) => setCourseIdFilter(event.target.value)}
+                placeholder="All"
+              />
+            </label>
             <label className="grid gap-2 text-xs text-slate-400">
               Assignment status
               <select
@@ -128,11 +143,17 @@ export default function StudentCourseworkPage() {
             </div>
             <div className="mt-4 space-y-3">
               {(coursework?.assignments ?? []).map((assignment) => (
-                <Card key={assignment.id} className="p-3">
-                  <p className="text-sm font-semibold">{assignment.title}</p>
-                  <p className="text-xs text-slate-500">Due {assignment.due_at ?? "-"}</p>
-                  <p className="text-xs text-slate-500">Status {assignment.status}</p>
-                </Card>
+                <Link
+                  key={assignment.id}
+                  href={assignment.course?.id ? `/courses/${assignment.course.id}` : "/dashboard"}
+                  className="block"
+                >
+                  <Card className="p-3">
+                    <p className="text-sm font-semibold">{assignment.title}</p>
+                    <p className="text-xs text-slate-500">Due {assignment.due_at ?? "-"}</p>
+                    <p className="text-xs text-slate-500">Status {assignment.status}</p>
+                  </Card>
+                </Link>
               ))}
               {!(coursework?.assignments ?? []).length && (
                 <p className="text-sm text-slate-400">No assignments found.</p>
@@ -161,13 +182,19 @@ export default function StudentCourseworkPage() {
             </div>
             <div className="mt-4 space-y-3">
               {(coursework?.quizzes ?? []).map((quiz) => (
-                <Card key={quiz.id} className="p-3">
-                  <p className="text-sm font-semibold">{quiz.title}</p>
-                  <p className="text-xs text-slate-500">Status {quiz.status}</p>
-                  <p className="text-xs text-slate-500">
-                    Attempts {quiz.attempts_used}/{quiz.max_attempts ?? "-"}
-                  </p>
-                </Card>
+                <Link
+                  key={quiz.id}
+                  href={quiz.course?.id ? `/courses/${quiz.course.id}` : "/dashboard"}
+                  className="block"
+                >
+                  <Card className="p-3">
+                    <p className="text-sm font-semibold">{quiz.title}</p>
+                    <p className="text-xs text-slate-500">Status {quiz.status}</p>
+                    <p className="text-xs text-slate-500">
+                      Attempts {quiz.attempts_used}/{quiz.max_attempts ?? "-"}
+                    </p>
+                  </Card>
+                </Link>
               ))}
               {!(coursework?.quizzes ?? []).length && (
                 <p className="text-sm text-slate-400">No quizzes found.</p>

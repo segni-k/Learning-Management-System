@@ -174,6 +174,29 @@ export default function DashboardPage() {
         <Panel>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">My learning</p>
+              <h2 className="text-lg font-semibold">Everything in one place</h2>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <Link className="rounded-full border border-slate-700/80 px-3 py-1.5 text-slate-200" href="/student/coursework">
+                Coursework
+              </Link>
+              <Link className="rounded-full border border-slate-700/80 px-3 py-1.5 text-slate-200" href="/student/activity">
+                Activity
+              </Link>
+              <Link className="rounded-full border border-slate-700/80 px-3 py-1.5 text-slate-200" href="/student/notifications">
+                Notifications
+              </Link>
+              <Link className="rounded-full border border-slate-700/80 px-3 py-1.5 text-slate-200" href="/courses">
+                Catalog
+              </Link>
+            </div>
+          </div>
+        </Panel>
+
+        <Panel>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
               <h2 className="text-lg font-semibold">Continue learning</h2>
               <p className="text-xs text-slate-500">Jump back into your latest lesson or open your top courses.</p>
             </div>
@@ -320,12 +343,18 @@ export default function DashboardPage() {
             </p>
             <div className="mt-4 space-y-3">
               {focusAssignments.map((assignment) => (
-                <Card key={`focus-assignment-${assignment.id}`} className="p-3">
-                  <p className="text-sm font-medium">{assignment.title}</p>
-                  <p className="text-xs text-slate-500">
-                    {assignment.status.toUpperCase()} · Due {assignment.due_at ?? "-"}
-                  </p>
-                </Card>
+                <Link
+                  key={`focus-assignment-${assignment.id}`}
+                  href={assignment.course?.id ? `/courses/${assignment.course.id}` : `/student/coursework?assignments_status=${assignment.status}`}
+                  className="block"
+                >
+                  <Card className="p-3">
+                    <p className="text-sm font-medium">{assignment.title}</p>
+                    <p className="text-xs text-slate-500">
+                      {assignment.status.toUpperCase()} · Due {formatDate(assignment.due_at)}
+                    </p>
+                  </Card>
+                </Link>
               ))}
               {!focusAssignments.length && (
                 <p className="text-sm text-slate-400">No urgent assignments right now.</p>
@@ -333,12 +362,18 @@ export default function DashboardPage() {
             </div>
             <div className="mt-4 space-y-3">
               {focusQuizzes.map((quiz) => (
-                <Card key={`focus-quiz-${quiz.id}`} className="p-3">
-                  <p className="text-sm font-medium">{quiz.title}</p>
-                  <p className="text-xs text-slate-500">
-                    Not started · Attempts left {quiz.attempts_remaining ?? quiz.max_attempts ?? "-"}
-                  </p>
-                </Card>
+                <Link
+                  key={`focus-quiz-${quiz.id}`}
+                  href={quiz.course?.id ? `/courses/${quiz.course.id}` : "/student/coursework?quiz_status=not_started"}
+                  className="block"
+                >
+                  <Card className="p-3">
+                    <p className="text-sm font-medium">{quiz.title}</p>
+                    <p className="text-xs text-slate-500">
+                      Not started · Attempts left {quiz.attempts_remaining ?? quiz.max_attempts ?? "-"}
+                    </p>
+                  </Card>
+                </Link>
               ))}
               {!focusQuizzes.length && (
                 <p className="text-sm text-slate-400">No pending quizzes right now.</p>
@@ -411,15 +446,22 @@ export default function DashboardPage() {
 
         <section className="grid gap-6 lg:grid-cols-2">
           <Panel>
-            <h2 className="text-lg font-semibold">Upcoming assignments</h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold">Upcoming assignments</h2>
+              <Link className="text-xs text-amber-300" href="/student/coursework?assignments_status=pending">
+                View all
+              </Link>
+            </div>
             <div className="mt-4 space-y-3">
               {(overview?.upcoming_assignments ?? []).map((assignment) => (
-                <Card key={assignment.id} className="p-3">
-                  <p className="text-sm font-semibold">{assignment.title}</p>
-                  <p className="text-xs text-slate-500">
-                    {assignment.course_id ? `Course #${assignment.course_id}` : ""} · Due {formatDate(assignment.due_at)}
-                  </p>
-                </Card>
+                <Link key={assignment.id} href={assignment.course_id ? `/courses/${assignment.course_id}` : "/student/coursework"} className="block">
+                  <Card className="p-3">
+                    <p className="text-sm font-semibold">{assignment.title}</p>
+                    <p className="text-xs text-slate-500">
+                      {assignment.course_id ? `Course #${assignment.course_id}` : ""} · Due {formatDate(assignment.due_at)}
+                    </p>
+                  </Card>
+                </Link>
               ))}
               {!(overview?.upcoming_assignments ?? []).length && (
                 <p className="text-sm text-slate-400">No upcoming assignments.</p>
@@ -427,15 +469,22 @@ export default function DashboardPage() {
             </div>
           </Panel>
           <Panel>
-            <h2 className="text-lg font-semibold">Available quizzes</h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold">Available quizzes</h2>
+              <Link className="text-xs text-amber-300" href="/student/coursework?quiz_status=not_started">
+                View all
+              </Link>
+            </div>
             <div className="mt-4 space-y-3">
               {(overview?.available_quizzes ?? []).map((quiz) => (
-                <Card key={quiz.id} className="p-3">
-                  <p className="text-sm font-semibold">{quiz.title}</p>
-                  <p className="text-xs text-slate-500">
-                    {quiz.course_id ? `Course #${quiz.course_id}` : ""} · Attempts {quiz.max_attempts ?? "-"}
-                  </p>
-                </Card>
+                <Link key={quiz.id} href={quiz.course_id ? `/courses/${quiz.course_id}` : "/student/coursework?quiz_status=not_started"} className="block">
+                  <Card className="p-3">
+                    <p className="text-sm font-semibold">{quiz.title}</p>
+                    <p className="text-xs text-slate-500">
+                      {quiz.course_id ? `Course #${quiz.course_id}` : ""} · Attempts {quiz.max_attempts ?? "-"}
+                    </p>
+                  </Card>
+                </Link>
               ))}
               {!(overview?.available_quizzes ?? []).length && (
                 <p className="text-sm text-slate-400">No quizzes available.</p>
@@ -446,15 +495,22 @@ export default function DashboardPage() {
 
         <section className="grid gap-6 lg:grid-cols-2">
           <Panel>
-            <h2 className="text-lg font-semibold">Notifications</h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold">Notifications</h2>
+              <Link className="text-xs text-amber-300" href="/student/notifications">
+                Open notifications
+              </Link>
+            </div>
             <div className="mt-4 space-y-4 text-sm">
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Upcoming assignments</p>
                 <ul className="mt-2 space-y-2">
                   {(notifications?.upcoming_assignments ?? []).map((item) => (
-                    <li key={`assignment-${item.id}`} className="rounded-lg border border-slate-800 bg-slate-950/70 p-2">
-                      <p className="text-sm font-medium">{item.title}</p>
-                      <p className="text-xs text-slate-500">Due {item.due_at}</p>
+                    <li key={`assignment-${item.id}`}>
+                      <Link href={item.course?.id ? `/courses/${item.course.id}` : "/student/notifications"} className="block rounded-lg border border-slate-800 bg-slate-950/70 p-2">
+                        <p className="text-sm font-medium">{item.title}</p>
+                        <p className="text-xs text-slate-500">Due {formatDate(item.due_at)}</p>
+                      </Link>
                     </li>
                   ))}
                   {!(notifications?.upcoming_assignments ?? []).length && (
@@ -466,9 +522,11 @@ export default function DashboardPage() {
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">New lessons</p>
                 <ul className="mt-2 space-y-2">
                   {(notifications?.new_lessons ?? []).map((item) => (
-                    <li key={`lesson-${item.id}`} className="rounded-lg border border-slate-800 bg-slate-950/70 p-2">
-                      <p className="text-sm font-medium">{item.title}</p>
-                      <p className="text-xs text-slate-500">Added {item.created_at}</p>
+                    <li key={`lesson-${item.id}`}>
+                      <Link href={item.course?.id ? `/courses/${item.course.id}` : "/student/notifications"} className="block rounded-lg border border-slate-800 bg-slate-950/70 p-2">
+                        <p className="text-sm font-medium">{item.title}</p>
+                        <p className="text-xs text-slate-500">Added {formatDate(item.created_at)}</p>
+                      </Link>
                     </li>
                   ))}
                   {!(notifications?.new_lessons ?? []).length && (
@@ -480,9 +538,11 @@ export default function DashboardPage() {
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">New quizzes</p>
                 <ul className="mt-2 space-y-2">
                   {(notifications?.new_quizzes ?? []).map((item) => (
-                    <li key={`quiz-${item.id}`} className="rounded-lg border border-slate-800 bg-slate-950/70 p-2">
-                      <p className="text-sm font-medium">{item.title}</p>
-                      <p className="text-xs text-slate-500">Added {item.created_at}</p>
+                    <li key={`quiz-${item.id}`}>
+                      <Link href={item.course?.id ? `/courses/${item.course.id}` : "/student/notifications"} className="block rounded-lg border border-slate-800 bg-slate-950/70 p-2">
+                        <p className="text-sm font-medium">{item.title}</p>
+                        <p className="text-xs text-slate-500">Added {formatDate(item.created_at)}</p>
+                      </Link>
                     </li>
                   ))}
                   {!(notifications?.new_quizzes ?? []).length && (
@@ -493,23 +553,32 @@ export default function DashboardPage() {
             </div>
           </Panel>
           <Panel>
-            <h2 className="text-lg font-semibold">Recent activity</h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold">Recent activity</h2>
+              <Link className="text-xs text-amber-300" href="/student/activity">
+                Open activity
+              </Link>
+            </div>
             <div className="mt-4 space-y-3 text-sm">
               {recentSubmissions.map((item) => (
-                <Card key={`submission-${item.id}`} className="p-3">
-                  <p className="text-sm font-medium">Assignment submitted</p>
-                  <p className="text-xs text-slate-500">
-                    {item.assignment?.title} · {formatDate(item.submitted_at)}
-                  </p>
-                </Card>
+                <Link key={`submission-${item.id}`} href={item.course?.id ? `/courses/${item.course.id}` : "/student/activity"} className="block">
+                  <Card className="p-3">
+                    <p className="text-sm font-medium">Assignment submitted</p>
+                    <p className="text-xs text-slate-500">
+                      {item.assignment?.title} · {formatDate(item.submitted_at)}
+                    </p>
+                  </Card>
+                </Link>
               ))}
               {recentAttempts.map((item) => (
-                <Card key={`attempt-${item.id}`} className="p-3">
-                  <p className="text-sm font-medium">Quiz attempt</p>
-                  <p className="text-xs text-slate-500">
-                    {item.quiz?.title} · {formatDate(item.completed_at)} · Score {item.score ?? "-"}
-                  </p>
-                </Card>
+                <Link key={`attempt-${item.id}`} href={item.course?.id ? `/courses/${item.course.id}` : "/student/activity"} className="block">
+                  <Card className="p-3">
+                    <p className="text-sm font-medium">Quiz attempt</p>
+                    <p className="text-xs text-slate-500">
+                      {item.quiz?.title} · {formatDate(item.completed_at)} · Score {item.score ?? "-"}
+                    </p>
+                  </Card>
+                </Link>
               ))}
               {!recentSubmissions.length && !recentAttempts.length && (
                 <p className="text-sm text-slate-400">No recent activity.</p>
@@ -519,17 +588,28 @@ export default function DashboardPage() {
         </section>
 
         <Panel>
-          <h2 className="text-lg font-semibold">Coursework</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">Coursework</h2>
+            <Link className="text-xs text-amber-300" href="/student/coursework">
+              Open coursework
+            </Link>
+          </div>
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
             <div className="space-y-2">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Assignments</p>
               {(coursework?.assignments ?? []).map((assignment) => (
-                <Card key={assignment.id} className="p-3">
-                  <p className="text-sm font-medium">{assignment.title}</p>
-                  <p className="text-xs text-slate-500">
-                    {assignment.status} · Due {formatDate(assignment.due_at)}
-                  </p>
-                </Card>
+                <Link
+                  key={assignment.id}
+                  href={assignment.course?.id ? `/courses/${assignment.course.id}` : `/student/coursework?assignments_status=${assignment.status}`}
+                  className="block"
+                >
+                  <Card className="p-3">
+                    <p className="text-sm font-medium">{assignment.title}</p>
+                    <p className="text-xs text-slate-500">
+                      {assignment.status} · Due {formatDate(assignment.due_at)}
+                    </p>
+                  </Card>
+                </Link>
               ))}
               {!(coursework?.assignments ?? []).length && (
                 <p className="text-sm text-slate-400">No assignments found.</p>
@@ -538,12 +618,18 @@ export default function DashboardPage() {
             <div className="space-y-2">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Quizzes</p>
               {(coursework?.quizzes ?? []).map((quiz) => (
-                <Card key={quiz.id} className="p-3">
-                  <p className="text-sm font-medium">{quiz.title}</p>
-                  <p className="text-xs text-slate-500">
-                    {quiz.status} · Attempts {quiz.attempts_used}/{quiz.max_attempts ?? "-"}
-                  </p>
-                </Card>
+                <Link
+                  key={quiz.id}
+                  href={quiz.course?.id ? `/courses/${quiz.course.id}` : `/student/coursework?quiz_status=${quiz.status}`}
+                  className="block"
+                >
+                  <Card className="p-3">
+                    <p className="text-sm font-medium">{quiz.title}</p>
+                    <p className="text-xs text-slate-500">
+                      {quiz.status} · Attempts {quiz.attempts_used}/{quiz.max_attempts ?? "-"}
+                    </p>
+                  </Card>
+                </Link>
               ))}
               {!(coursework?.quizzes ?? []).length && (
                 <p className="text-sm text-slate-400">No quizzes found.</p>
