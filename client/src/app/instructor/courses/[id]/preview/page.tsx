@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { getCourse } from "@/lib/courses";
 import { RequireRole } from "@/components/require-role";
 import { SectionHeader } from "@/components/ui/section-header";
@@ -101,11 +102,15 @@ export default function InstructorCoursePreviewPage() {
           <div className="relative">
             <div className="absolute -inset-6 rounded-3xl bg-amber-400/10 blur-3xl" />
             <div className="relative overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-950/70">
-              <img
+              <Image
+                loader={({ src }) => src}
+                unoptimized
                 src={course?.thumbnail_path || "/images/courses/default.svg"}
                 alt={course?.title ?? "Course"}
+                width={1280}
+                height={720}
+                sizes="(max-width: 1024px) 100vw, 45vw"
                 className="h-[280px] w-full object-cover"
-                loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
             </div>

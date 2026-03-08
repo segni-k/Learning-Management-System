@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 
 export default function LoginPage() {
@@ -13,9 +13,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<string | null>(null);
 
-  if (user) {
+  useEffect(() => {
+    if (!user) return;
     router.replace("/dashboard");
-  }
+  }, [user, router]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
