@@ -5,12 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-/** @property int $id */
-/** @property int $course_id */
-/** @property string $title */
-/** @property string|null $description */
-/** @property array|null $takeaways */
-/** @property int $sort_order */
+/**
+ * @property int $id
+ * @property int $course_id
+ * @property string $title
+ * @property string|null $description
+ * @property array|null $takeaways
+ * @property int $sort_order
+ */
 
 class Module extends Model
 {

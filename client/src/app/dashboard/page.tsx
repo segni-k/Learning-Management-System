@@ -67,9 +67,24 @@ export default function DashboardPage() {
     [activity]
   );
 
+  const dashboardBenefits = [
+    {
+      title: "Learning roadmap",
+      description: "See your enrolled courses, lesson completion, and average progress in one view.",
+    },
+    {
+      title: "Assessment readiness",
+      description: "Check upcoming assignments and available quizzes before deadlines.",
+    },
+    {
+      title: "Continuous tracking",
+      description: "Follow notifications, submissions, and attempts to stay on pace each week.",
+    },
+  ];
+
   return (
     <RequireAuth>
-      <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-12 sm:px-6 sm:py-16">
+      <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-12 sm:px-6 sm:py-16">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Dashboard</p>
@@ -125,6 +140,23 @@ export default function DashboardPage() {
                 </Link>
               </div>
             )}
+          </div>
+        </Panel>
+
+        <Panel>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">What you get in your LMS dashboard</h2>
+            <Link className="text-sm text-amber-300" href="/courses">
+              Browse courses
+            </Link>
+          </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            {dashboardBenefits.map((benefit) => (
+              <Card key={benefit.title} className="p-4">
+                <p className="text-sm font-semibold">{benefit.title}</p>
+                <p className="mt-2 text-xs text-slate-400">{benefit.description}</p>
+              </Card>
+            ))}
           </div>
         </Panel>
 
