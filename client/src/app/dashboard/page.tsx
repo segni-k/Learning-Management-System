@@ -299,16 +299,18 @@ export default function DashboardPage() {
               <Card key={course.id} className="p-4">
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="text-lg font-semibold">{course.title}</h3>
-                  <Badge>{course.status}</Badge>
+                  <Badge>{course.completed_at ? "completed" : course.status}</Badge>
                 </div>
                 <p className="mt-2 text-sm text-slate-400">
                   {course.completed_lessons}/{course.total_lessons} lessons completed
                 </p>
-                <p className="text-xs text-slate-500">Avg progress: {course.average_progress}%</p>
+                <p className="text-xs text-slate-500">
+                  Completion: {Math.round(course.completion_percent ?? course.average_progress)}% · Avg progress: {course.average_progress}%
+                </p>
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-900">
                   <div
                     className="h-full rounded-full bg-amber-400"
-                    style={{ width: `${Math.min(Math.max(course.average_progress, 0), 100)}%` }}
+                    style={{ width: `${Math.min(Math.max(course.completion_percent ?? course.average_progress, 0), 100)}%` }}
                   />
                 </div>
                 <div className="mt-3 flex flex-wrap gap-3 text-xs">

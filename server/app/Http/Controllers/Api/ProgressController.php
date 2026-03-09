@@ -31,6 +31,35 @@ class ProgressController extends Controller
             ]
         );
 
+        $courseId = DB::table('lessons')
+            ->join('modules', 'lessons.module_id', '=', 'modules.id')
+            ->where('lessons.id', $data['lesson_id'])
+            ->value('modules.course_id');
+
+        if ($courseId) {
+            $summary = DB::table('lessons')
+                ->join('modules', 'lessons.module_id', '=', 'modules.id')
+                ->leftJoin('lesson_progress', function ($join) use ($user) {
+                    $join->on('lessons.id', '=', 'lesson_progress.lesson_id')
+                        ->where('lesson_progress.user_id', $user->id);
+                })
+                ->where('modules.course_id', $courseId)
+                ->selectRaw('count(lessons.id) as total_lessons')
+                ->selectRaw("sum(case when lesson_progress.status = 'completed' then 1 else 0 end) as completed_lessons")
+                ->selectRaw('avg(coalesce(lesson_progress.progress_percent, 0)) as average_progress')
+                ->first();
+
+            $totalLessons = (int) ($summary?->total_lessons ?? 0);
+            $completedLessons = (int) ($summary?->completed_lessons ?? 0);
+
+            Enrollment::query()
+                ->where('course_id', $courseId)
+                ->where('user_id', $user->id)
+                ->update([
+                    'completed_at' => $totalLessons > 0 && $completedLessons >= $totalLessons ? now() : null,
+                ]);
+        }
+
         return response()->json(['data' => $progress]);
     }
 
@@ -42,21 +71,23 @@ class ProgressController extends Controller
             abort(403, 'Only students can view progress summary.');
         }
 
-        $lessonIds = $course->lessons()->pluck('lessons.id');
-
-        $summary = LessonProgress::query()
-            ->where('user_id', $user->id)
-            ->whereIn('lesson_id', $lessonIds)
-            ->selectRaw('count(*) as total')
-            ->selectRaw("sum(case when status = 'completed' then 1 else 0 end) as completed")
-            ->selectRaw('avg(progress_percent) as average_progress')
+        $summary = DB::table('lessons')
+            ->join('modules', 'lessons.module_id', '=', 'modules.id')
+            ->leftJoin('lesson_progress', function ($join) use ($user) {
+                $join->on('lessons.id', '=', 'lesson_progress.lesson_id')
+                    ->where('lesson_progress.user_id', $user->id);
+            })
+            ->where('modules.course_id', $course->id)
+            ->selectRaw('count(lessons.id) as total_lessons')
+            ->selectRaw("sum(case when lesson_progress.status = 'completed' then 1 else 0 end) as completed_lessons")
+            ->selectRaw('avg(coalesce(lesson_progress.progress_percent, 0)) as average_progress')
             ->first();
 
         return response()->json([
             'data' => [
                 'course_id' => $course->id,
-                'total_lessons' => (int) ($summary?->total ?? 0),
-                'completed_lessons' => (int) ($summary?->completed ?? 0),
+                'total_lessons' => (int) ($summary?->total_lessons ?? 0),
+                'completed_lessons' => (int) ($summary?->completed_lessons ?? 0),
                 'average_progress' => (float) ($summary?->average_progress ?? 0),
             ],
         ]);

@@ -146,7 +146,9 @@ export type StudentDashboardCourse = {
   total_lessons: number;
   completed_lessons: number;
   average_progress: number;
+  completion_percent?: number;
   enrolled_at: string;
+  completed_at?: string | null;
 };
 
 export type StudentDashboardOverview = {

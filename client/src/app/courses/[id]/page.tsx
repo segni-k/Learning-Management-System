@@ -307,6 +307,11 @@ export default function CourseDetailPage() {
                 <p className="text-2xl font-semibold">
                   {dashboard.progress.completed_lessons}/{dashboard.progress.total_lessons}
                 </p>
+                <p className="text-xs text-slate-500">
+                  Completion {dashboard.progress.total_lessons > 0
+                    ? Math.round((dashboard.progress.completed_lessons / dashboard.progress.total_lessons) * 100)
+                    : 0}%
+                </p>
               </Card>
               <Card>
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Average</p>

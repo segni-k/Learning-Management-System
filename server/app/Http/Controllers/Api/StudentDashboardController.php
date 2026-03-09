@@ -20,7 +20,7 @@ class StudentDashboardController extends Controller
         }
 
         $enrollments = Enrollment::query()
-            ->select(['id', 'course_id', 'user_id', 'enrolled_at'])
+            ->select(['id', 'course_id', 'user_id', 'enrolled_at', 'completed_at'])
             ->with([
                 'course:id,title,status,instructor_id',
                 'course.instructor:id,name,email',
@@ -39,14 +39,16 @@ class StudentDashboardController extends Controller
             ->groupBy('modules.course_id')
             ->pluck('total', 'course_id');
 
-        $progressByCourse = DB::table('lesson_progress')
-            ->join('lessons', 'lesson_progress.lesson_id', '=', 'lessons.id')
+        $progressByCourse = DB::table('lessons')
             ->join('modules', 'lessons.module_id', '=', 'modules.id')
-            ->where('lesson_progress.user_id', $user->id)
+            ->leftJoin('lesson_progress', function ($join) use ($user) {
+                $join->on('lessons.id', '=', 'lesson_progress.lesson_id')
+                    ->where('lesson_progress.user_id', $user->id);
+            })
             ->whereIn('modules.course_id', $courseIds)
             ->select('modules.course_id')
             ->selectRaw("sum(case when lesson_progress.status = 'completed' then 1 else 0 end) as completed")
-            ->selectRaw('avg(lesson_progress.progress_percent) as average_progress')
+            ->selectRaw('avg(coalesce(lesson_progress.progress_percent, 0)) as average_progress')
             ->groupBy('modules.course_id')
             ->get()
             ->keyBy('course_id');
@@ -55,16 +57,23 @@ class StudentDashboardController extends Controller
             $course = $enrollment->course;
             $courseId = $course->id;
             $progress = $progressByCourse->get($courseId);
+            $totalLessons = (int) ($totalLessonsByCourse[$courseId] ?? 0);
+            $completedLessons = (int) ($progress->completed ?? 0);
+            $completionPercent = $totalLessons > 0
+                ? round(($completedLessons / $totalLessons) * 100, 2)
+                : 0;
 
             return [
                 'id' => $courseId,
                 'title' => $course->title,
                 'status' => $course->status,
                 'instructor' => $course->instructor?->only(['id', 'name', 'email']),
-                'total_lessons' => (int) ($totalLessonsByCourse[$courseId] ?? 0),
-                'completed_lessons' => (int) ($progress->completed ?? 0),
+                'total_lessons' => $totalLessons,
+                'completed_lessons' => $completedLessons,
                 'average_progress' => round((float) ($progress->average_progress ?? 0), 2),
+                'completion_percent' => $completionPercent,
                 'enrolled_at' => $enrollment->enrolled_at,
+                'completed_at' => $enrollment->completed_at,
             ];
         });
 

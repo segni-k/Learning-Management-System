@@ -34,12 +34,16 @@ class StudentCourseDashboardController extends Controller
 
         $lessonIds = $course->lessons()->pluck('lessons.id');
 
-        $summary = LessonProgress::query()
-            ->where('user_id', $user->id)
-            ->whereIn('lesson_id', $lessonIds)
-            ->selectRaw('count(*) as total')
-            ->selectRaw("sum(case when status = 'completed' then 1 else 0 end) as completed")
-            ->selectRaw('avg(progress_percent) as average_progress')
+        $summary = DB::table('lessons')
+            ->join('modules', 'lessons.module_id', '=', 'modules.id')
+            ->leftJoin('lesson_progress', function ($join) use ($user) {
+                $join->on('lessons.id', '=', 'lesson_progress.lesson_id')
+                    ->where('lesson_progress.user_id', $user->id);
+            })
+            ->where('modules.course_id', $course->id)
+            ->selectRaw('count(lessons.id) as total_lessons')
+            ->selectRaw("sum(case when lesson_progress.status = 'completed' then 1 else 0 end) as completed_lessons")
+            ->selectRaw('avg(coalesce(lesson_progress.progress_percent, 0)) as average_progress')
             ->first();
 
         $resume = LessonProgress::query()
@@ -108,7 +112,7 @@ class StudentCourseDashboardController extends Controller
             ->select('modules.id', 'modules.title')
             ->selectRaw('count(lessons.id) as total_lessons')
             ->selectRaw("sum(case when lesson_progress.status = 'completed' then 1 else 0 end) as completed_lessons")
-            ->selectRaw('avg(lesson_progress.progress_percent) as average_progress')
+            ->selectRaw('avg(coalesce(lesson_progress.progress_percent, 0)) as average_progress')
             ->groupBy('modules.id', 'modules.title')
             ->orderBy('modules.sort_order')
             ->get()
@@ -130,8 +134,8 @@ class StudentCourseDashboardController extends Controller
             'data' => [
                 'course' => $course->only(['id', 'title', 'status']),
                 'progress' => [
-                    'total_lessons' => (int) ($summary?->total ?? 0),
-                    'completed_lessons' => (int) ($summary?->completed ?? 0),
+                    'total_lessons' => (int) ($summary?->total_lessons ?? 0),
+                    'completed_lessons' => (int) ($summary?->completed_lessons ?? 0),
                     'average_progress' => (float) ($summary?->average_progress ?? 0),
                 ],
                 'resume_lesson' => $resume
