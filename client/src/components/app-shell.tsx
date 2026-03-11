@@ -149,9 +149,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       const currentScrollY = window.scrollY;
       const previousScrollY = lastScrollYRef.current;
       const direction = currentScrollY > previousScrollY ? "down" : "up";
-      const viewportThreshold = Math.max(88, Math.min(window.innerHeight * 0.11, 140));
-      const hideDistance = 28;
-      const showDistance = 18;
+      const viewportThreshold = Math.max(56, Math.min(window.innerHeight * 0.07, 88));
+      const hideDistance = 18;
+      const showDistance = 6;
 
       if (currentScrollY <= viewportThreshold) {
         setHideSecondaryRow(false);
