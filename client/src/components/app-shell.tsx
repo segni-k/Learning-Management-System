@@ -2,6 +2,23 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import {
+  Activity,
+  BarChart3,
+  Bell,
+  BookOpen,
+  ClipboardList,
+  GraduationCap,
+  LayoutDashboard,
+  LogIn,
+  LogOut,
+  Menu,
+  Moon,
+  Shield,
+  Sun,
+  UserCog,
+  X,
+} from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -29,16 +46,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [user?.role]);
 
   const navLinks = [
-    { href: "/dashboard", label: "Dashboard", show: true },
-    { href: "/courses", label: "Courses", show: true },
-    { href: "/student/coursework", label: "Coursework", show: user?.role === "student" },
-    { href: "/student/enrollments", label: "Enrollments", show: user?.role === "student" },
-    { href: "/student/activity", label: "Activity", show: user?.role === "student" },
-    { href: "/student/notifications", label: "Notifications", show: user?.role === "student" },
-    { href: "/instructor/courses", label: "Instructor", show: user?.role === "instructor" || user?.role === "admin" },
-    { href: "/instructor/analytics", label: "Analytics", show: user?.role === "instructor" || user?.role === "admin" },
-    { href: "/instructor/activity", label: "Instructor Activity", show: user?.role === "instructor" || user?.role === "admin" },
-    { href: "/admin/analytics", label: "Admin", show: user?.role === "admin" },
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, show: true },
+    { href: "/courses", label: "Courses", icon: BookOpen, show: true },
+    { href: "/student/coursework", label: "Coursework", icon: ClipboardList, show: user?.role === "student" },
+    { href: "/student/enrollments", label: "Enrollments", icon: GraduationCap, show: user?.role === "student" },
+    { href: "/student/activity", label: "Activity", icon: Activity, show: user?.role === "student" },
+    { href: "/student/notifications", label: "Notifications", icon: Bell, show: user?.role === "student" },
+    { href: "/instructor/courses", label: "Instructor", icon: UserCog, show: user?.role === "instructor" || user?.role === "admin" },
+    { href: "/instructor/analytics", label: "Analytics", icon: BarChart3, show: user?.role === "instructor" || user?.role === "admin" },
+    { href: "/instructor/activity", label: "Instructor Activity", icon: Activity, show: user?.role === "instructor" || user?.role === "admin" },
+    { href: "/admin/analytics", label: "Admin", icon: Shield, show: user?.role === "admin" },
   ].filter((link) => link.show);
 
   return (
@@ -59,8 +76,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           <nav className="hidden items-center gap-3 text-sm md:flex">
             {navLinks.map((link) => (
-              <Link key={link.href} className="app-shell-link" href={link.href}>
-                {link.label}
+              <Link key={link.href} className="app-shell-link inline-flex items-center gap-1.5" href={link.href}>
+                <link.icon size={15} strokeWidth={2} />
+                <span>{link.label}</span>
               </Link>
             ))}
             {user?.role === "instructor" || user?.role === "admin" ? (
@@ -70,10 +88,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ) : null}
             {mounted ? (
               <button
-                className="app-shell-pill rounded-full px-3 py-1 text-[11px]"
+                className="app-shell-pill rounded-full px-3 py-1 text-[11px] inline-flex items-center gap-1.5"
                 type="button"
                 onClick={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
               >
+                {theme === "dark" ? <Sun size={13} /> : <Moon size={13} />}
                 {theme === "dark" ? "Light theme" : "Dark theme"}
               </button>
             ) : null}
@@ -81,14 +100,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <span className="app-shell-link">Checking...</span>
             ) : user ? (
               <button
-                className="app-shell-pill rounded-full px-4 py-1 text-xs"
+                className="app-shell-pill rounded-full px-4 py-1 text-xs inline-flex items-center gap-1.5"
                 type="button"
                 onClick={() => void logout()}
               >
+                <LogOut size={14} />
                 Sign out
               </button>
             ) : (
-              <Link className="rounded-full px-4 py-1 text-xs font-semibold ui-btn-primary" href="/login">
+              <Link className="rounded-full px-4 py-1 text-xs font-semibold ui-btn-primary inline-flex items-center gap-1.5" href="/login">
+                <LogIn size={14} />
                 Sign in
               </Link>
             )}
@@ -97,20 +118,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2 md:hidden">
             {mounted ? (
               <button
-                className="app-shell-pill rounded-full px-3 py-1.5 text-[11px]"
+                className="app-shell-pill rounded-full px-3 py-1.5 text-[11px] inline-flex items-center gap-1"
                 type="button"
                 onClick={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
               >
+                {theme === "dark" ? <Sun size={13} /> : <Moon size={13} />}
                 {theme === "dark" ? "Light" : "Dark"}
               </button>
             ) : null}
             <button
-              className="app-shell-pill rounded-full px-3 py-1.5 text-xs"
+              className="app-shell-pill rounded-full px-3 py-1.5 text-xs inline-flex items-center gap-1"
               type="button"
               aria-expanded={mobileMenuOpen}
               aria-label="Toggle navigation menu"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
             >
+              {mobileMenuOpen ? <X size={15} /> : <Menu size={15} />}
               {mobileMenuOpen ? "Close" : "Menu"}
             </button>
           </div>
@@ -122,10 +145,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {navLinks.map((link) => (
                 <Link
                   key={`mobile-${link.href}`}
-                  className="app-shell-link app-shell-pill rounded-xl px-4 py-3 text-sm"
+                  className="app-shell-link app-shell-pill rounded-xl px-4 py-3 text-sm inline-flex items-center gap-2"
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
                 >
+                  <link.icon size={16} strokeWidth={2} />
                   {link.label}
                 </Link>
               ))}
@@ -134,21 +158,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <span className="app-shell-link app-shell-pill rounded-xl px-4 py-3 text-sm">Checking...</span>
               ) : user ? (
                 <button
-                  className="app-shell-pill rounded-xl px-4 py-3 text-left text-sm"
+                  className="app-shell-pill rounded-xl px-4 py-3 text-left text-sm inline-flex items-center gap-2"
                   type="button"
                   onClick={() => {
                     setMobileMenuOpen(false);
                     void logout();
                   }}
                 >
+                  <LogOut size={16} />
                   Sign out
                 </button>
               ) : (
                 <Link
-                  className="ui-btn-primary rounded-xl px-4 py-3 text-center text-sm font-semibold"
+                  className="ui-btn-primary rounded-xl px-4 py-3 text-center text-sm font-semibold inline-flex items-center justify-center gap-2"
                   href="/login"
                   onClick={() => setMobileMenuOpen(false)}
                 >
+                  <LogIn size={16} />
                   Sign in
                 </Link>
               )}

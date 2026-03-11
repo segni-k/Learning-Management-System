@@ -3,6 +3,17 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Bell,
+  BookOpen,
+  ClipboardList,
+  Compass,
+  Gauge,
+  LayoutDashboard,
+  RefreshCw,
+  Sparkles,
+  TrendingUp,
+} from "lucide-react";
+import {
   getResumeLesson,
   getStudentOverview,
   listStudentActivity,
@@ -163,7 +174,10 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button type="button" className="px-5 py-2 text-sm" onClick={() => void loadDashboard()}>
-              {isLoading ? "Refreshing..." : "Refresh"}
+              <span className="inline-flex items-center gap-1.5">
+                <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
+                {isLoading ? "Refreshing..." : "Refresh"}
+              </span>
             </Button>
             <Button type="button" className="px-5 py-2 text-sm" onClick={() => void logout()}>
               Sign out
@@ -175,7 +189,7 @@ export default function DashboardPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">My learning</p>
-              <h2 className="text-lg font-semibold">Everything in one place</h2>
+              <h2 className="inline-flex items-center gap-2 text-lg font-semibold"><LayoutDashboard size={18} /> Everything in one place</h2>
             </div>
             <div className="flex flex-wrap gap-2 text-xs">
               <Link className="rounded-full border border-slate-700/80 px-3 py-1.5 text-slate-200" href="/student/coursework">
@@ -197,7 +211,7 @@ export default function DashboardPage() {
         <Panel>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold">Continue learning</h2>
+              <h2 className="inline-flex items-center gap-2 text-lg font-semibold"><Compass size={18} /> Continue learning</h2>
               <p className="text-xs text-slate-500">Jump back into your latest lesson or open your top courses.</p>
             </div>
             <Link className="text-sm text-amber-300" href="/courses">
@@ -339,7 +353,7 @@ export default function DashboardPage() {
 
         <section className="grid gap-6 lg:grid-cols-2">
           <Panel>
-            <h2 className="text-lg font-semibold">Focus now</h2>
+            <h2 className="inline-flex items-center gap-2 text-lg font-semibold"><Sparkles size={18} /> Focus now</h2>
             <p className="mt-1 text-xs text-slate-500">
               Prioritized actions from your coursework and assessments.
             </p>
@@ -383,7 +397,7 @@ export default function DashboardPage() {
             </div>
           </Panel>
           <Panel>
-            <h2 className="text-lg font-semibold">Learning performance</h2>
+            <h2 className="inline-flex items-center gap-2 text-lg font-semibold"><TrendingUp size={18} /> Learning performance</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <Card className="p-3">
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Assignments graded</p>
@@ -410,7 +424,7 @@ export default function DashboardPage() {
 
         <Panel>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold">What you get in your LMS dashboard</h2>
+            <h2 className="inline-flex items-center gap-2 text-lg font-semibold"><Gauge size={18} /> What you get in your LMS dashboard</h2>
             <Link className="text-sm text-amber-300" href="/courses">
               Browse courses
             </Link>
@@ -449,7 +463,7 @@ export default function DashboardPage() {
         <section className="grid gap-6 lg:grid-cols-2">
           <Panel>
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold">Upcoming assignments</h2>
+              <h2 className="inline-flex items-center gap-2 text-lg font-semibold"><ClipboardList size={18} /> Upcoming assignments</h2>
               <Link className="text-xs text-amber-300" href="/student/coursework?assignments_status=pending">
                 View all
               </Link>
@@ -472,7 +486,7 @@ export default function DashboardPage() {
           </Panel>
           <Panel>
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold">Available quizzes</h2>
+              <h2 className="inline-flex items-center gap-2 text-lg font-semibold"><BookOpen size={18} /> Available quizzes</h2>
               <Link className="text-xs text-amber-300" href="/student/coursework?quiz_status=not_started">
                 View all
               </Link>
@@ -498,7 +512,7 @@ export default function DashboardPage() {
         <section className="grid gap-6 lg:grid-cols-2">
           <Panel>
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold">Notifications</h2>
+              <h2 className="inline-flex items-center gap-2 text-lg font-semibold"><Bell size={18} /> Notifications</h2>
               <Link className="text-xs text-amber-300" href="/student/notifications">
                 Open notifications
               </Link>

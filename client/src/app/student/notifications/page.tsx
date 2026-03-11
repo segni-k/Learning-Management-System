@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Bell, BookOpen, ClipboardList, FileQuestion } from "lucide-react";
 import { RequireAuth } from "@/components/require-auth";
 import { listStudentNotifications } from "@/lib/student";
 import { Panel } from "@/components/ui/panel";
@@ -27,12 +28,15 @@ export default function StudentNotificationsPage() {
 
   return (
     <RequireAuth>
-      <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-16">
+      <main className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-4 py-8 sm:px-6 sm:py-10">
         <header className="space-y-2">
           <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Student</p>
-          <h1 className="text-3xl font-semibold">Notifications</h1>
+          <h1 className="inline-flex items-center gap-2 text-2xl font-semibold sm:text-3xl">
+            <Bell size={22} /> Notifications
+          </h1>
           <p className="text-sm text-slate-400">Upcoming deadlines and new content.</p>
-          <Link className="text-xs text-amber-300" href="/dashboard">
+          <Link className="inline-flex items-center gap-1 text-xs text-amber-300" href="/dashboard">
+            <ClipboardList size={14} />
             Back to dashboard
           </Link>
         </header>
@@ -41,7 +45,7 @@ export default function StudentNotificationsPage() {
 
         <section className="grid gap-6 lg:grid-cols-3">
           <Panel>
-            <h2 className="text-lg font-semibold">Upcoming assignments</h2>
+            <h2 className="inline-flex items-center gap-2 text-lg font-semibold"><ClipboardList size={18} /> Upcoming assignments</h2>
             <div className="mt-4 space-y-3">
               {(notifications?.upcoming_assignments ?? []).map((item) => (
                 <Link key={`assignment-${item.id}`} href={item.course?.id ? `/courses/${item.course.id}` : "/dashboard"} className="block">
@@ -57,7 +61,7 @@ export default function StudentNotificationsPage() {
             </div>
           </Panel>
           <Panel>
-            <h2 className="text-lg font-semibold">New lessons</h2>
+            <h2 className="inline-flex items-center gap-2 text-lg font-semibold"><BookOpen size={18} /> New lessons</h2>
             <div className="mt-4 space-y-3">
               {(notifications?.new_lessons ?? []).map((item) => (
                 <Link key={`lesson-${item.id}`} href={item.course?.id ? `/courses/${item.course.id}` : "/dashboard"} className="block">
@@ -73,7 +77,7 @@ export default function StudentNotificationsPage() {
             </div>
           </Panel>
           <Panel>
-            <h2 className="text-lg font-semibold">New quizzes</h2>
+            <h2 className="inline-flex items-center gap-2 text-lg font-semibold"><FileQuestion size={18} /> New quizzes</h2>
             <div className="mt-4 space-y-3">
               {(notifications?.new_quizzes ?? []).map((item) => (
                 <Link key={`quiz-${item.id}`} href={item.course?.id ? `/courses/${item.course.id}` : "/dashboard"} className="block">

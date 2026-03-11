@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { BookOpen, GraduationCap, LayoutDashboard } from "lucide-react";
 import { RequireAuth } from "@/components/require-auth";
 import { listEnrollments } from "@/lib/enrollments";
 import { getStudentOverview } from "@/lib/student";
@@ -61,7 +62,9 @@ export default function StudentEnrollmentsPage() {
       <main className="mx-auto flex w-full max-w-4xl flex-col gap-5 px-4 py-8 sm:px-6 sm:py-10">
         <header className="space-y-2 px-1">
           <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Student</p>
-          <h1 className="text-2xl font-semibold sm:text-3xl">My Learning</h1>
+          <h1 className="inline-flex items-center gap-2 text-2xl font-semibold sm:text-3xl">
+            <GraduationCap size={22} /> My Learning
+          </h1>
           <p className="text-sm text-slate-400">Continue from your enrolled courses.</p>
         </header>
 
@@ -69,8 +72,9 @@ export default function StudentEnrollmentsPage() {
 
         <Panel>
           <div className="mb-4 flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold">Enrolled courses</p>
-            <Link className="text-xs text-amber-300" href="/dashboard">
+            <p className="inline-flex items-center gap-1.5 text-sm font-semibold"><BookOpen size={16} /> Enrolled courses</p>
+            <Link className="inline-flex items-center gap-1 text-xs text-amber-300" href="/dashboard">
+              <LayoutDashboard size={14} />
               Back to dashboard
             </Link>
           </div>

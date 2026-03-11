@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { ChevronLeft, ChevronRight, ClipboardList, Filter, ListChecks } from "lucide-react";
 import { RequireAuth } from "@/components/require-auth";
 import { listStudentCoursework } from "@/lib/student";
 import { Panel } from "@/components/ui/panel";
@@ -47,12 +48,15 @@ export default function StudentCourseworkPage() {
 
   return (
     <RequireAuth>
-      <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-16">
+      <main className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-4 py-8 sm:px-6 sm:py-10">
         <header className="space-y-2">
           <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Student</p>
-          <h1 className="text-3xl font-semibold">Coursework</h1>
+          <h1 className="inline-flex items-center gap-2 text-2xl font-semibold sm:text-3xl">
+            <ClipboardList size={22} /> Coursework
+          </h1>
           <p className="text-sm text-slate-400">Filter assignments and quiz availability.</p>
-          <Link className="text-xs text-amber-300" href="/dashboard">
+          <Link className="inline-flex items-center gap-1 text-xs text-amber-300" href="/dashboard">
+            <ListChecks size={14} />
             Back to dashboard
           </Link>
         </header>
@@ -60,7 +64,9 @@ export default function StudentCourseworkPage() {
         {status && <p className="text-sm text-rose-300">{status}</p>}
 
         <Panel>
-          <h2 className="text-lg font-semibold">Filters</h2>
+          <h2 className="inline-flex items-center gap-2 text-lg font-semibold">
+            <Filter size={18} /> Filters
+          </h2>
           <div className="mt-4 grid gap-3 md:grid-cols-4">
             <label className="grid gap-2 text-xs text-slate-400">
               Course ID
@@ -130,14 +136,14 @@ export default function StudentCourseworkPage() {
                   className="px-3 py-1 text-xs"
                   onClick={() => setAssignmentsPage((prev) => Math.max(1, prev - 1))}
                 >
-                  Prev
+                  <span className="inline-flex items-center gap-1"><ChevronLeft size={14} /> Prev</span>
                 </Button>
                 <Button
                   type="button"
                   className="px-3 py-1 text-xs"
                   onClick={() => setAssignmentsPage((prev) => prev + 1)}
                 >
-                  Next
+                  <span className="inline-flex items-center gap-1">Next <ChevronRight size={14} /></span>
                 </Button>
               </div>
             </div>
@@ -169,14 +175,14 @@ export default function StudentCourseworkPage() {
                   className="px-3 py-1 text-xs"
                   onClick={() => setQuizzesPage((prev) => Math.max(1, prev - 1))}
                 >
-                  Prev
+                  <span className="inline-flex items-center gap-1"><ChevronLeft size={14} /> Prev</span>
                 </Button>
                 <Button
                   type="button"
                   className="px-3 py-1 text-xs"
                   onClick={() => setQuizzesPage((prev) => prev + 1)}
                 >
-                  Next
+                  <span className="inline-flex items-center gap-1">Next <ChevronRight size={14} /></span>
                 </Button>
               </div>
             </div>
