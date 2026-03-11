@@ -329,11 +329,12 @@ export default function DashboardPage() {
         </Panel>
 
         <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <Panel className="relative overflow-hidden p-0">
+          <Panel className="relative overflow-hidden border-sky-300/20 bg-gradient-to-br from-sky-700 via-indigo-700 to-violet-700 p-0 text-white">
             <div className={`absolute inset-0 bg-gradient-to-br ${activeBanner.accent}`} />
+            <div className="absolute inset-0 bg-slate-950/28" />
             <div className="relative flex h-full flex-col gap-8 p-6 sm:p-8">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.25em] text-amber-200/80">
+                <span className="rounded-full border border-white/30 bg-slate-950/25 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-white shadow-sm">
                   Smart banner
                 </span>
                 <div className="flex items-center gap-2">
@@ -341,7 +342,7 @@ export default function DashboardPage() {
                     type="button"
                     aria-label="Previous dashboard banner"
                     onClick={() => setActiveBannerIndex((current) => (current - 1 + bannerSlides.length) % bannerSlides.length)}
-                    className="rounded-full border border-slate-700/70 bg-slate-950/70 p-2 text-slate-200 transition hover:border-slate-500"
+                    className="rounded-full border border-white/30 bg-slate-950/25 p-2 text-white transition hover:border-white/50 hover:bg-slate-950/35"
                   >
                     <ChevronLeft size={16} />
                   </button>
@@ -349,7 +350,7 @@ export default function DashboardPage() {
                     type="button"
                     aria-label="Next dashboard banner"
                     onClick={() => setActiveBannerIndex((current) => (current + 1) % bannerSlides.length)}
-                    className="rounded-full border border-slate-700/70 bg-slate-950/70 p-2 text-slate-200 transition hover:border-slate-500"
+                    className="rounded-full border border-white/30 bg-slate-950/25 p-2 text-white transition hover:border-white/50 hover:bg-slate-950/35"
                   >
                     <ChevronRight size={16} />
                   </button>
@@ -357,9 +358,9 @@ export default function DashboardPage() {
               </div>
 
               <div className="max-w-3xl space-y-4">
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">{activeBanner.eyebrow}</p>
-                <h2 className="text-3xl font-semibold leading-tight sm:text-4xl">{activeBanner.title}</h2>
-                <p className="max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/85">{activeBanner.eyebrow}</p>
+                <h2 className="text-3xl font-semibold leading-tight text-white sm:text-4xl">{activeBanner.title}</h2>
+                <p className="max-w-2xl text-sm font-medium leading-7 text-white/95 sm:text-base">
                   {activeBanner.description}
                 </p>
                 <div className="flex flex-wrap gap-3">
@@ -372,7 +373,7 @@ export default function DashboardPage() {
                   </Link>
                   <Link
                     href={activeBanner.secondaryHref}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-700/80 px-5 py-2.5 text-sm font-semibold text-slate-200"
+                    className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-slate-950/20 px-5 py-2.5 text-sm font-semibold text-white"
                   >
                     {activeBanner.secondaryLabel}
                   </Link>
@@ -381,7 +382,7 @@ export default function DashboardPage() {
 
               <div className="grid gap-3 sm:grid-cols-3">
                 {activeBanner.highlights.map((item) => (
-                  <div key={item} className="rounded-2xl border border-slate-800/80 bg-slate-950/75 px-4 py-3 text-sm text-slate-100">
+                  <div key={item} className="rounded-2xl border border-white/20 bg-slate-950/22 px-4 py-3 text-sm font-semibold text-white shadow-sm backdrop-blur-sm">
                     {item}
                   </div>
                 ))}

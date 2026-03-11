@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Activity,
   BarChart3,
@@ -47,6 +47,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [desktopExploreOpen, setDesktopExploreOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [hideSecondaryRow, setHideSecondaryRow] = useState(false);
+  const lastScrollYRef = useRef(0);
+  const directionStartYRef = useRef(0);
+  const lastDirectionRef = useRef<"up" | "down">("down");
   const exploreOptions = [
     { label: "Popular", query: "Popular", icon: Flame },
     { label: "Design", query: "Design", icon: Palette },
@@ -140,27 +143,53 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    let lastScrollY = window.scrollY;
+    let ticking = false;
 
-    const handleScroll = () => {
+    const updateScrollState = () => {
       const currentScrollY = window.scrollY;
+      const previousScrollY = lastScrollYRef.current;
+      const direction = currentScrollY > previousScrollY ? "down" : "up";
+      const viewportThreshold = Math.max(88, Math.min(window.innerHeight * 0.11, 140));
+      const hideDistance = 28;
+      const showDistance = 18;
 
-      if (currentScrollY <= 24) {
+      if (currentScrollY <= viewportThreshold) {
         setHideSecondaryRow(false);
-        lastScrollY = currentScrollY;
+        lastScrollYRef.current = currentScrollY;
+        directionStartYRef.current = currentScrollY;
+        lastDirectionRef.current = direction;
+        ticking = false;
         return;
       }
 
-      if (currentScrollY > lastScrollY + 6) {
-        setHideSecondaryRow(true);
-      } else if (currentScrollY < lastScrollY - 6) {
-        setHideSecondaryRow(false);
+      if (direction !== lastDirectionRef.current) {
+        directionStartYRef.current = previousScrollY;
+        lastDirectionRef.current = direction;
       }
 
-      lastScrollY = currentScrollY;
+      const distanceSinceDirectionChange = Math.abs(currentScrollY - directionStartYRef.current);
+
+      if (!hideSecondaryRow && direction === "down" && distanceSinceDirectionChange >= hideDistance) {
+        setHideSecondaryRow(true);
+        directionStartYRef.current = currentScrollY;
+      } else if (hideSecondaryRow && direction === "up" && distanceSinceDirectionChange >= showDistance) {
+        setHideSecondaryRow(false);
+        directionStartYRef.current = currentScrollY;
+      }
+
+      lastScrollYRef.current = currentScrollY;
+      ticking = false;
     };
 
-    handleScroll();
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(updateScrollState);
+    };
+
+  lastScrollYRef.current = window.scrollY;
+  directionStartYRef.current = window.scrollY;
+  handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {

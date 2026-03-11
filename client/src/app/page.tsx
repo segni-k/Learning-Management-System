@@ -237,7 +237,7 @@ export default function Home() {
       <main className="landing-page mx-auto flex w-full max-w-7xl flex-col gap-20 px-6 py-20 md:gap-24 md:py-24">
         <header className="grid gap-10 lg:grid-cols-[1.12fr_0.88fr] lg:items-center">
           <div className="space-y-6">
-            <p className="text-xs uppercase tracking-[0.4em] text-amber-200/70">
+            <p className="text-xs font-semibold uppercase tracking-[0.4em] text-sky-700 dark:text-sky-200">
               Learning management system
             </p>
             <h1 className="max-w-4xl font-display text-4xl leading-[1.06] sm:text-5xl md:text-6xl lg:text-[4rem]">
@@ -279,7 +279,7 @@ export default function Home() {
             />
             <div className="relative space-y-5">
               <div className="flex items-center justify-between gap-3">
-                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.25em] text-amber-200/80">
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.25em] text-slate-700 dark:text-amber-200/80">
                   Swiping spotlight
                 </span>
                 <div className="flex items-center gap-2">
@@ -353,10 +353,21 @@ export default function Home() {
         </header>
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {highlights.map((item) => (
-            <div key={item.label} className="glass-panel rounded-2xl p-5">
-              <p className="text-3xl font-semibold text-slate-50">{item.value}</p>
-              <p className="mt-2 text-sm text-slate-400">{item.label}</p>
+          {highlights.map((item, index) => (
+            <div
+              key={item.label}
+              className={`rounded-2xl border p-5 shadow-[0_18px_45px_rgba(15,23,42,0.12)] ${
+                index === 0
+                  ? "border-sky-300/30 bg-gradient-to-br from-sky-600 via-blue-700 to-cyan-700"
+                  : index === 1
+                    ? "border-indigo-300/30 bg-gradient-to-br from-indigo-600 via-blue-700 to-violet-700"
+                    : index === 2
+                      ? "border-cyan-300/30 bg-gradient-to-br from-cyan-600 via-sky-700 to-blue-700"
+                      : "border-blue-300/30 bg-gradient-to-br from-blue-600 via-indigo-700 to-sky-700"
+              }`}
+            >
+              <p className="text-3xl font-semibold text-white">{item.value}</p>
+              <p className="mt-2 text-sm font-medium text-sky-50/90">{item.label}</p>
             </div>
           ))}
         </section>
@@ -375,14 +386,14 @@ export default function Home() {
                 const Icon = benefit.icon;
 
                 return (
-                  <div key={benefit.title} className="rounded-2xl border border-slate-800/80 bg-slate-950/65 p-5">
+                  <div key={benefit.title} className="rounded-2xl border border-gray-400 bg-gray-300 p-5">
                     <div className="flex items-start gap-4">
-                      <div className="rounded-2xl bg-amber-400/10 p-3 text-amber-300">
+                      <div className="rounded-2xl bg-white/60 p-3 text-amber-700">
                         <Icon size={20} />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold">{benefit.title}</h3>
-                        <p className="mt-2 text-sm text-slate-400">{benefit.copy}</p>
+                        <h3 className="text-lg font-semibold text-slate-900">{benefit.title}</h3>
+                        <p className="mt-2 text-sm text-slate-700">{benefit.copy}</p>
                       </div>
                     </div>
                   </div>
@@ -421,12 +432,12 @@ export default function Home() {
                   const Icon = item.icon;
 
                   return (
-                    <div key={item.title} className="rounded-2xl border border-slate-800/80 bg-slate-950/65 p-5">
-                      <div className="flex items-center gap-3 text-amber-300">
+                    <div key={item.title} className="rounded-2xl border border-gray-400 bg-gray-300 p-5">
+                      <div className="flex items-center gap-3 text-amber-700">
                         <Icon size={18} />
-                        <p className="text-sm font-semibold text-slate-100">{item.title}</p>
+                        <p className="text-sm font-semibold text-slate-900">{item.title}</p>
                       </div>
-                      <p className="mt-3 text-sm text-slate-400">{item.copy}</p>
+                      <p className="mt-3 text-sm text-slate-700">{item.copy}</p>
                     </div>
                   );
                 })}
@@ -549,12 +560,12 @@ export default function Home() {
             <h2 className="mt-2 text-3xl font-semibold md:text-4xl">FAQ</h2>
             <div className="mt-6 space-y-4">
               {faqItems.map((item) => (
-                <details key={item.question} className="group rounded-2xl border border-slate-800/80 bg-slate-950/65 p-5">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-base font-semibold text-slate-100">
+                <details key={item.question} className="group rounded-2xl border border-gray-400 bg-gray-300 p-5">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-base font-semibold text-slate-900">
                     <span>{item.question}</span>
-                    <span className="text-amber-300 transition group-open:rotate-45">+</span>
+                    <span className="text-amber-700 transition group-open:rotate-45">+</span>
                   </summary>
-                  <p className="mt-4 text-sm leading-7 text-slate-400">{item.answer}</p>
+                  <p className="mt-4 text-sm leading-7 text-slate-700">{item.answer}</p>
                 </details>
               ))}
             </div>
@@ -568,8 +579,8 @@ export default function Home() {
               Atlas LMS now has room for banners, discovery, FAQs, outcomes, and guided action.
             </p>
             <div className="mt-6 rounded-[1.75rem] border border-amber-400/20 bg-amber-400/10 p-5">
-              <p className="text-sm font-semibold text-amber-200">What gets improved</p>
-              <ul className="mt-3 space-y-2 text-sm text-slate-200">
+              <p className="text-sm font-semibold text-slate-900 dark:text-amber-200">What gets improved</p>
+              <ul className="mt-3 space-y-2 text-sm text-slate-700 dark:text-slate-200">
                 <li>• More professional course discovery</li>
                 <li>• Better storytelling for students</li>
                 <li>• Clearer path into the dashboard</li>
