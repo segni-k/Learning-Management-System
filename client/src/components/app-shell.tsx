@@ -12,6 +12,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return stored === "light" || stored === "dark" ? stored : "dark";
   });
   const [mounted, setMounted] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -23,6 +24,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     window.localStorage.setItem("atlas-theme", theme);
   }, [theme, mounted]);
 
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [user?.role]);
+
+  const navLinks = [
+    { href: "/dashboard", label: "Dashboard", show: true },
+    { href: "/courses", label: "Courses", show: true },
+    { href: "/student/coursework", label: "Coursework", show: user?.role === "student" },
+    { href: "/student/enrollments", label: "Enrollments", show: user?.role === "student" },
+    { href: "/student/activity", label: "Activity", show: user?.role === "student" },
+    { href: "/student/notifications", label: "Notifications", show: user?.role === "student" },
+    { href: "/instructor/courses", label: "Instructor", show: user?.role === "instructor" || user?.role === "admin" },
+    { href: "/instructor/analytics", label: "Analytics", show: user?.role === "instructor" || user?.role === "admin" },
+    { href: "/instructor/activity", label: "Instructor Activity", show: user?.role === "instructor" || user?.role === "admin" },
+    { href: "/admin/analytics", label: "Admin", show: user?.role === "admin" },
+  ].filter((link) => link.show);
+
   return (
     <div className="app-shell">
       <div className="pointer-events-none fixed inset-0">
@@ -31,60 +49,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="bg-blob-3 absolute bottom-[-20%] left-[20%] h-[420px] w-[420px] rounded-full blur-[160px]" />
       </div>
       <header className="app-shell-header sticky top-0 z-20">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-4">
-          <Link className="flex items-center gap-3 font-display text-xl" href="/">
-            <span className="app-shell-logo inline-flex h-9 w-9 items-center justify-center rounded-full">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
+          <Link className="flex items-center gap-2.5 font-display text-lg sm:text-xl" href="/">
+            <span className="app-shell-logo inline-flex h-8 w-8 items-center justify-center rounded-full text-sm sm:h-9 sm:w-9 sm:text-base">
               A
             </span>
             Atlas LMS
           </Link>
-          <nav className="flex flex-wrap items-center gap-3 text-sm">
-            <Link className="app-shell-link" href="/dashboard">
-              Dashboard
-            </Link>
-            <Link className="app-shell-link" href="/courses">
-              Courses
-            </Link>
-            {user?.role === "student" ? (
-              <Link className="app-shell-link" href="/student/coursework">
-                Coursework
+
+          <nav className="hidden items-center gap-3 text-sm md:flex">
+            {navLinks.map((link) => (
+              <Link key={link.href} className="app-shell-link" href={link.href}>
+                {link.label}
               </Link>
-            ) : null}
-            {user?.role === "student" ? (
-              <Link className="app-shell-link" href="/student/enrollments">
-                Enrollments
-              </Link>
-            ) : null}
-            {user?.role === "student" ? (
-              <Link className="app-shell-link" href="/student/activity">
-                Activity
-              </Link>
-            ) : null}
-            {user?.role === "student" ? (
-              <Link className="app-shell-link" href="/student/notifications">
-                Notifications
-              </Link>
-            ) : null}
-            {user?.role === "instructor" || user?.role === "admin" ? (
-              <Link className="app-shell-link" href="/instructor/courses">
-                Instructor
-              </Link>
-            ) : null}
-            {user?.role === "instructor" || user?.role === "admin" ? (
-              <Link className="app-shell-link" href="/instructor/analytics">
-                Analytics
-              </Link>
-            ) : null}
-            {user?.role === "instructor" || user?.role === "admin" ? (
-              <Link className="app-shell-link" href="/instructor/activity">
-                Activity
-              </Link>
-            ) : null}
-            {user?.role === "admin" ? (
-              <Link className="app-shell-link" href="/admin/analytics">
-                Admin
-              </Link>
-            ) : null}
+            ))}
             {user?.role === "instructor" || user?.role === "admin" ? (
               <span className="app-shell-pill rounded-full px-3 py-1 text-[11px]">
                 Instructor view
@@ -115,7 +93,68 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </Link>
             )}
           </nav>
+
+          <div className="flex items-center gap-2 md:hidden">
+            {mounted ? (
+              <button
+                className="app-shell-pill rounded-full px-3 py-1.5 text-[11px]"
+                type="button"
+                onClick={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
+              >
+                {theme === "dark" ? "Light" : "Dark"}
+              </button>
+            ) : null}
+            <button
+              className="app-shell-pill rounded-full px-3 py-1.5 text-xs"
+              type="button"
+              aria-expanded={mobileMenuOpen}
+              aria-label="Toggle navigation menu"
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+            >
+              {mobileMenuOpen ? "Close" : "Menu"}
+            </button>
+          </div>
         </div>
+
+        {mobileMenuOpen ? (
+          <div className="border-t border-[color:color-mix(in_srgb,var(--border)_80%,transparent)] px-4 pb-4 pt-3 md:hidden">
+            <div className="grid gap-2">
+              {navLinks.map((link) => (
+                <Link
+                  key={`mobile-${link.href}`}
+                  className="app-shell-link app-shell-pill rounded-xl px-4 py-3 text-sm"
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+
+              {loading ? (
+                <span className="app-shell-link app-shell-pill rounded-xl px-4 py-3 text-sm">Checking...</span>
+              ) : user ? (
+                <button
+                  className="app-shell-pill rounded-xl px-4 py-3 text-left text-sm"
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    void logout();
+                  }}
+                >
+                  Sign out
+                </button>
+              ) : (
+                <Link
+                  className="ui-btn-primary rounded-xl px-4 py-3 text-center text-sm font-semibold"
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign in
+                </Link>
+              )}
+            </div>
+          </div>
+        ) : null}
       </header>
       {children}
     </div>

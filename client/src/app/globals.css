@@ -89,6 +89,7 @@ h3,
 
 .app-shell-link {
   color: var(--app-link);
+  font-weight: 500;
 }
 
 .app-shell-link:hover {
@@ -132,9 +133,14 @@ h3,
   color: var(--ink);
 }
 
+.ui-btn-primary:hover {
+  background: var(--accent-strong);
+}
+
 .ui-btn-outline {
   border: 1px solid color-mix(in srgb, var(--border) 95%, transparent);
   color: var(--foreground);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
 }
 
 .ui-btn-ghost {
@@ -143,6 +149,62 @@ h3,
 
 .ui-btn-ghost:hover {
   color: var(--accent-strong);
+}
+
+html[data-theme="light"] .text-slate-100,
+html[data-theme="light"] .text-slate-200 {
+  color: #0f172a !important;
+}
+
+html[data-theme="light"] .text-slate-300 {
+  color: #1e293b !important;
+}
+
+html[data-theme="light"] .text-slate-400 {
+  color: #334155 !important;
+}
+
+html[data-theme="light"] .text-slate-500 {
+  color: #475569 !important;
+}
+
+html[data-theme="light"] .border-slate-900\/70,
+html[data-theme="light"] .border-slate-800\/80,
+html[data-theme="light"] .border-slate-800,
+html[data-theme="light"] .border-slate-700\/80,
+html[data-theme="light"] .border-slate-700 {
+  border-color: color-mix(in srgb, var(--border) 92%, transparent) !important;
+}
+
+html[data-theme="light"] .bg-slate-950,
+html[data-theme="light"] .bg-slate-950\/60,
+html[data-theme="light"] .bg-slate-950\/70,
+html[data-theme="light"] .bg-slate-950\/80,
+html[data-theme="light"] .bg-slate-900\/70,
+html[data-theme="light"] .bg-slate-900\/80 {
+  background-color: color-mix(in srgb, #ffffff 94%, #edf3ff) !important;
+}
+
+html[data-theme="light"] input,
+html[data-theme="light"] select,
+html[data-theme="light"] textarea {
+  background-color: #ffffff;
+  color: #0f172a;
+  border-color: #cddbef;
+}
+
+html[data-theme="light"] .prose {
+  color: #1e293b;
+}
+
+@media (max-width: 767px) {
+  body {
+    font-size: 15px;
+  }
+
+  .glass-panel {
+    border-radius: 1rem;
+  }
 }
 
 @keyframes floatSlow {
