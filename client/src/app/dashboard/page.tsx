@@ -3,16 +3,24 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ArrowRight,
   Bell,
   BookOpen,
+  ChevronLeft,
+  ChevronRight,
   ClipboardList,
   Compass,
+  Flame,
   Gauge,
   LayoutDashboard,
+  Rocket,
   RefreshCw,
   Sparkles,
+  Star,
+  Target,
   TrendingUp,
 } from "lucide-react";
+import { listCourses } from "@/lib/courses";
 import {
   getResumeLesson,
   getStudentOverview,
@@ -27,6 +35,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type {
+  Course,
   StudentActivity,
   StudentCoursework,
   StudentDashboardOverview,
@@ -41,9 +50,11 @@ export default function DashboardPage() {
   const [activity, setActivity] = useState<StudentActivity | null>(null);
   const [coursework, setCoursework] = useState<StudentCoursework | null>(null);
   const [resumeLesson, setResumeLesson] = useState<ResumeLesson>(null);
+  const [catalogCourses, setCatalogCourses] = useState<Course[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
+  const [activeBannerIndex, setActiveBannerIndex] = useState(0);
 
   const loadDashboard = useCallback(async () => {
     if (!user) return;
@@ -52,13 +63,14 @@ export default function DashboardPage() {
     setStatus(null);
 
     try {
-      const [overviewResponse, notificationsResponse, activityResponse, courseworkResponse, resumeResponse] =
+      const [overviewResponse, notificationsResponse, activityResponse, courseworkResponse, resumeResponse, catalogResponse] =
         await Promise.all([
           getStudentOverview(),
           listStudentNotifications(),
           listStudentActivity({ submissions_per_page: 10, attempts_per_page: 10 }),
           listStudentCoursework({ assignments_per_page: 10, quizzes_per_page: 10 }),
           getResumeLesson(),
+          listCourses(),
         ]);
 
       setOverview(overviewResponse.data);
@@ -66,6 +78,7 @@ export default function DashboardPage() {
       setActivity(activityResponse.data);
       setCoursework(courseworkResponse.data);
       setResumeLesson(resumeResponse.data);
+      setCatalogCourses(catalogResponse.data ?? []);
       setLastUpdatedAt(new Date().toISOString());
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Failed to load dashboard data");
@@ -77,6 +90,14 @@ export default function DashboardPage() {
   useEffect(() => {
     void loadDashboard();
   }, [loadDashboard]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setActiveBannerIndex((current) => (current + 1) % 3);
+    }, 5000);
+
+    return () => window.clearInterval(interval);
+  }, []);
 
   const recentSubmissions = useMemo(
     () => activity?.assignment_submissions?.slice(0, 5) ?? [],
@@ -136,6 +157,103 @@ export default function DashboardPage() {
     [overview]
   );
 
+  const trendingCourses = useMemo(() => {
+    const enrolledIds = new Set((overview?.courses ?? []).map((course) => course.id));
+    const publishedCourses = catalogCourses.filter((course) => course.status === "published");
+
+    const sorted = [...publishedCourses].sort((left, right) => {
+      const leftScore = Number(!enrolledIds.has(left.id)) + Number(Boolean(left.instructor)) + Number(Boolean(left.description));
+      const rightScore = Number(!enrolledIds.has(right.id)) + Number(Boolean(right.instructor)) + Number(Boolean(right.description));
+
+      return rightScore - leftScore;
+    });
+
+    return sorted.slice(0, 4);
+  }, [catalogCourses, overview]);
+
+  const discoveryCollections = [
+    {
+      title: "Career acceleration",
+      description: "High-demand skills, guided practice, and job-ready course tracks.",
+      search: "career",
+      icon: Rocket,
+    },
+    {
+      title: "Creative and design",
+      description: "Visual communication, product thinking, and project-based learning.",
+      search: "design",
+      icon: Sparkles,
+    },
+    {
+      title: "Productivity and web",
+      description: "Modern workflows, web fundamentals, and execution-focused courses.",
+      search: "web",
+      icon: Target,
+    },
+  ];
+
+  const bannerSlides = useMemo(
+    () => [
+      {
+        eyebrow: "Learning momentum",
+        title: `You have ${snapshot.pendingAssignments} task${snapshot.pendingAssignments === 1 ? "" : "s"} to keep moving forward.`,
+        description:
+          snapshot.pendingAssignments > 0
+            ? "Stay ahead of deadlines with one place for assignments, quizzes, notifications, and progress tracking."
+            : "You are in a strong position. Use this week to explore new skills and keep your streak active.",
+        primaryHref: "/student/coursework",
+        primaryLabel: snapshot.pendingAssignments > 0 ? "Review coursework" : "Browse coursework",
+        secondaryHref: "/courses",
+        secondaryLabel: "Discover trending courses",
+        highlights: [
+          `${snapshot.courses} enrolled courses`,
+          `${snapshot.averageProgress}% average progress`,
+          `${snapshot.notifications} live updates`,
+        ],
+        accent: "from-amber-400/25 via-orange-500/20 to-transparent",
+      },
+      {
+        eyebrow: "Continue where you left off",
+        title: resumeLesson
+          ? `Resume ${resumeLesson.course?.title ?? "your latest course"}`
+          : "Pick a course and start building momentum.",
+        description: resumeLesson
+          ? `${resumeLesson.lesson?.title} is ready to continue with ${resumeLesson.progress_percent}% completed so far.`
+          : "Open the catalog, enroll in a course, and the dashboard will start surfacing your next best learning actions.",
+        primaryHref: resumeLesson ? `/courses/${resumeLesson.course?.id}` : "/courses",
+        primaryLabel: resumeLesson ? "Resume lesson" : "Explore courses",
+        secondaryHref: "/student/activity",
+        secondaryLabel: "Open activity",
+        highlights: [
+          `${snapshot.completedLessons}/${snapshot.totalLessons} lessons completed`,
+          `${snapshot.attemptedQuizzes} quiz attempts made`,
+          `${snapshot.gradedAssignments} graded assignments`,
+        ],
+        accent: "from-sky-400/25 via-cyan-500/20 to-transparent",
+      },
+      {
+        eyebrow: "Trending now",
+        title: trendingCourses[0]?.title
+          ? `${trendingCourses[0].title} is gaining attention across the catalog.`
+          : "Discover fresh course picks built for modern learners.",
+        description:
+          trendingCourses[0]?.description?.trim() ||
+          "Explore curated learning paths with polished content, progress tracking, and structured assessments.",
+        primaryHref: trendingCourses[0]?.id ? `/courses/${trendingCourses[0].id}` : "/courses",
+        primaryLabel: "View trending course",
+        secondaryHref: "/courses",
+        secondaryLabel: "Open catalog",
+        highlights: [
+          `${trendingCourses.length || 4} curated recommendations`,
+          "Professional course browsing",
+          "Discovery inspired by Coursera",
+        ],
+        accent: "from-violet-400/25 via-fuchsia-500/20 to-transparent",
+      },
+    ],
+    [resumeLesson, snapshot, trendingCourses]
+  );
+
   const formatDate = (value?: string | null) => {
     if (!value) return "-";
     const date = new Date(value);
@@ -158,9 +276,11 @@ export default function DashboardPage() {
     },
   ];
 
+  const activeBanner = bannerSlides[activeBannerIndex] ?? bannerSlides[0];
+
   return (
     <RequireAuth>
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-12 sm:px-6 sm:py-16">
+      <main className="dashboard-page mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-12 sm:px-6 sm:py-16">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Dashboard</p>
@@ -207,6 +327,133 @@ export default function DashboardPage() {
             </div>
           </div>
         </Panel>
+
+        <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+          <Panel className="relative overflow-hidden p-0">
+            <div className={`absolute inset-0 bg-gradient-to-br ${activeBanner.accent}`} />
+            <div className="relative flex h-full flex-col gap-8 p-6 sm:p-8">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.25em] text-amber-200/80">
+                  Smart banner
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    aria-label="Previous dashboard banner"
+                    onClick={() => setActiveBannerIndex((current) => (current - 1 + bannerSlides.length) % bannerSlides.length)}
+                    className="rounded-full border border-slate-700/70 bg-slate-950/70 p-2 text-slate-200 transition hover:border-slate-500"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next dashboard banner"
+                    onClick={() => setActiveBannerIndex((current) => (current + 1) % bannerSlides.length)}
+                    className="rounded-full border border-slate-700/70 bg-slate-950/70 p-2 text-slate-200 transition hover:border-slate-500"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="max-w-3xl space-y-4">
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">{activeBanner.eyebrow}</p>
+                <h2 className="text-3xl font-semibold leading-tight sm:text-4xl">{activeBanner.title}</h2>
+                <p className="max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+                  {activeBanner.description}
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <Link
+                    href={activeBanner.primaryHref}
+                    className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-5 py-2.5 text-sm font-semibold text-slate-950"
+                  >
+                    {activeBanner.primaryLabel}
+                    <ArrowRight size={16} />
+                  </Link>
+                  <Link
+                    href={activeBanner.secondaryHref}
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-700/80 px-5 py-2.5 text-sm font-semibold text-slate-200"
+                  >
+                    {activeBanner.secondaryLabel}
+                  </Link>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-3">
+                {activeBanner.highlights.map((item) => (
+                  <div key={item} className="rounded-2xl border border-slate-800/80 bg-slate-950/75 px-4 py-3 text-sm text-slate-100">
+                    {item}
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                {bannerSlides.map((slide, index) => (
+                  <button
+                    key={slide.eyebrow}
+                    type="button"
+                    aria-label={`Go to dashboard banner ${index + 1}`}
+                    onClick={() => setActiveBannerIndex(index)}
+                    className={`h-2.5 rounded-full transition ${index === activeBannerIndex ? "w-8 bg-amber-400" : "w-2.5 bg-slate-700"}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </Panel>
+
+          <div className="grid gap-4">
+            <Card className="p-5">
+              <div className="flex items-start gap-3">
+                <div className="rounded-2xl bg-amber-400/10 p-3 text-amber-300">
+                  <Flame size={20} />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Weekly momentum</p>
+                  <p className="mt-2 text-2xl font-semibold">{snapshot.averageProgress}%</p>
+                  <p className="mt-2 text-sm text-slate-400">
+                    Average progress across your current learning plan.
+                  </p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-5">
+              <div className="flex items-start gap-3">
+                <div className="rounded-2xl bg-sky-400/10 p-3 text-sky-300">
+                  <Target size={20} />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Next goal</p>
+                  <p className="mt-2 text-lg font-semibold">
+                    {focusAssignments[0]?.title ?? focusQuizzes[0]?.title ?? "Explore a new course"}
+                  </p>
+                  <p className="mt-2 text-sm text-slate-400">
+                    {focusAssignments[0]
+                      ? `Due ${formatDate(focusAssignments[0].due_at)}`
+                      : focusQuizzes[0]
+                        ? "Complete your next quiz attempt"
+                        : "Build your next skill with a trending catalog pick."}
+                  </p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-5">
+              <div className="flex items-start gap-3">
+                <div className="rounded-2xl bg-violet-400/10 p-3 text-violet-300">
+                  <Star size={20} />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Learner signal</p>
+                  <p className="mt-2 text-lg font-semibold">
+                    {snapshot.notifications > 0 ? `${snapshot.notifications} fresh updates` : "All caught up"}
+                  </p>
+                  <p className="mt-2 text-sm text-slate-400">
+                    Notifications, new lessons, and new quizzes are all visible from one place.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </section>
 
         <Panel>
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -296,6 +543,120 @@ export default function DashboardPage() {
               Alerts + updates · {snapshot.attemptedQuizzes} attempted quizzes
             </p>
           </Card>
+        </section>
+
+        <Panel>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Trending now</p>
+              <h2 className="inline-flex items-center gap-2 text-lg font-semibold"><Flame size={18} /> Trending courses for your next move</h2>
+            </div>
+            <Link className="text-sm text-amber-300" href="/courses">
+              Browse full catalog
+            </Link>
+          </div>
+          <div className="mt-4 grid gap-4 lg:grid-cols-4">
+            {trendingCourses.map((course, index) => (
+              <Card key={`trending-${course.id}`} className="flex h-full flex-col p-5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="rounded-full bg-amber-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-300">
+                    {index === 0 ? "Trending" : index === 1 ? "Popular" : "Recommended"}
+                  </span>
+                  <span className="text-xs text-slate-500">{course.level ?? "All levels"}</span>
+                </div>
+                <h3 className="mt-4 text-lg font-semibold text-slate-100">{course.title}</h3>
+                <p className="mt-3 flex-1 text-sm leading-7 text-slate-400">
+                  {course.description?.trim() || "A polished learning path with lessons, coursework, and progress tracking."}
+                </p>
+                <p className="mt-4 text-xs uppercase tracking-[0.2em] text-slate-500">
+                  {course.instructor?.name ? `By ${course.instructor.name}` : "Atlas faculty"}
+                </p>
+                <Link href={`/courses/${course.id}`} className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-amber-300">
+                  Open course
+                  <ArrowRight size={16} />
+                </Link>
+              </Card>
+            ))}
+            {!trendingCourses.length && (
+              <div className="lg:col-span-4 rounded-2xl border border-dashed border-slate-800/80 bg-slate-950/60 p-5 text-sm text-slate-400">
+                No published courses are available yet. Once courses are published, trending picks will appear here.
+              </div>
+            )}
+          </div>
+        </Panel>
+
+        <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+          <Panel>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Recommended collections</p>
+                <h2 className="text-lg font-semibold">Explore like a modern learning platform</h2>
+              </div>
+              <Link className="text-xs text-amber-300" href="/courses">
+                Discover more
+              </Link>
+            </div>
+            <div className="mt-4 space-y-3">
+              {discoveryCollections.map((collection) => {
+                const Icon = collection.icon;
+
+                return (
+                  <Link
+                    key={collection.title}
+                    href={`/courses?search=${encodeURIComponent(collection.search)}`}
+                    className="block"
+                  >
+                    <Card className="p-4 transition hover:-translate-y-0.5">
+                      <div className="flex items-start gap-4">
+                        <div className="rounded-2xl bg-slate-900 p-3 text-amber-300">
+                          <Icon size={18} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-100">{collection.title}</p>
+                          <p className="mt-2 text-xs leading-6 text-slate-400">{collection.description}</p>
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                );
+              })}
+            </div>
+          </Panel>
+
+          <Panel>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Why this dashboard feels stronger</p>
+                <h2 className="text-lg font-semibold">A richer student experience inspired by major learning platforms</h2>
+              </div>
+              <Badge>Professional</Badge>
+            </div>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              {[
+                {
+                  title: "Rotating banners",
+                  description: "Highlight priorities, resume points, and trending content without making the dashboard feel static.",
+                },
+                {
+                  title: "Trending course discovery",
+                  description: "Give learners fresh course suggestions right from the dashboard instead of hiding discovery in the catalog.",
+                },
+                {
+                  title: "Action-first layout",
+                  description: "Important tasks, progress, and alerts stay visible in a hierarchy that helps students act quickly.",
+                },
+                {
+                  title: "Coursera-like polish",
+                  description: "Use richer content blocks, curated sections, and stronger visual rhythm to feel more production-ready.",
+                },
+              ].map((item) => (
+                <Card key={item.title} className="p-4">
+                  <p className="text-sm font-semibold text-slate-100">{item.title}</p>
+                  <p className="mt-2 text-xs leading-6 text-slate-400">{item.description}</p>
+                </Card>
+              ))}
+            </div>
+          </Panel>
         </section>
 
         <Panel>
