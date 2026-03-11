@@ -96,4 +96,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Resource::class, 'uploaded_by');
     }
+
+    public function notificationReads()
+    {
+        return $this->hasMany(NotificationRead::class);
+    }
 }

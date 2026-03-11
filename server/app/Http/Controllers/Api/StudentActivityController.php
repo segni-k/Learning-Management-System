@@ -36,8 +36,13 @@ class StudentActivityController extends Controller
         }
 
         $submissionsQuery = AssignmentSubmission::query()
-            ->with(['assignment.course', 'assignment.lesson'])
+            ->with([
+                'assignment:id,course_id,lesson_id,title',
+                'assignment.course:id,title',
+                'assignment.lesson:id,title',
+            ])
             ->where('user_id', $user->id)
+            ->select(['id', 'assignment_id', 'submitted_at', 'graded_at', 'score', 'user_id'])
             ->orderByDesc('submitted_at');
 
         if ($courseId) {
@@ -68,8 +73,13 @@ class StudentActivityController extends Controller
             });
 
         $attemptsQuery = QuizAttempt::query()
-            ->with(['quiz.course', 'quiz.lesson'])
+            ->with([
+                'quiz:id,course_id,lesson_id,title',
+                'quiz.course:id,title',
+                'quiz.lesson:id,title',
+            ])
             ->where('user_id', $user->id)
+            ->select(['id', 'quiz_id', 'completed_at', 'score', 'user_id'])
             ->orderByDesc('completed_at');
 
         if ($courseId) {

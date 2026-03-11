@@ -7,6 +7,7 @@ import type {
   StudentCourseDashboard,
   StudentCoursework,
   StudentDashboardOverview,
+  StudentNotificationSummary,
   StudentNotifications,
 } from "./types";
 
@@ -16,6 +17,19 @@ export async function getStudentOverview() {
 
 export async function listStudentNotifications() {
   return apiJson<ApiResponse<StudentNotifications>>("/api/v1/student/notifications");
+}
+
+export async function getStudentNotificationSummary() {
+  return apiJson<ApiResponse<StudentNotificationSummary>>("/api/v1/student/notifications/summary");
+}
+
+export async function markStudentNotificationsRead(
+  notifications: Array<{ type: string; id: number }>
+) {
+  return apiJson<{ message: string }>("/api/v1/student/notifications/read", {
+    method: "POST",
+    body: JSON.stringify({ notifications }),
+  });
 }
 
 export async function listStudentCoursework(params?: {

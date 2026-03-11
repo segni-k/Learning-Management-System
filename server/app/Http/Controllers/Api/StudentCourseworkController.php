@@ -9,7 +9,6 @@ use App\Models\Enrollment;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class StudentCourseworkController extends Controller
 {
@@ -23,13 +22,54 @@ class StudentCourseworkController extends Controller
 
         $courseIds = Enrollment::query()
             ->where('user_id', $user->id)
-            ->pluck('course_id');
+            ->pluck('course_id')
+            ->all();
 
         $courseId = $request->query('course_id');
-        if ($courseId) {
-            $courseIds = $courseIds->filter(function ($id) use ($courseId) {
-                return (int) $id === (int) $courseId;
-            });
+        if ($courseId && ! in_array((int) $courseId, array_map('intval', $courseIds), true)) {
+            return response()->json([
+                'data' => [
+                    'assignments' => [],
+                    'quizzes' => [],
+                ],
+                'meta' => [
+                    'assignments' => [
+                        'current_page' => 1,
+                        'per_page' => 0,
+                        'total' => 0,
+                        'last_page' => 1,
+                    ],
+                    'quizzes' => [
+                        'current_page' => 1,
+                        'per_page' => 0,
+                        'total' => 0,
+                        'last_page' => 1,
+                    ],
+                ],
+            ]);
+        }
+
+        if (empty($courseIds)) {
+            return response()->json([
+                'data' => [
+                    'assignments' => [],
+                    'quizzes' => [],
+                ],
+                'meta' => [
+                    'assignments' => [
+                        'current_page' => 1,
+                        'per_page' => 0,
+                        'total' => 0,
+                        'last_page' => 1,
+                    ],
+                    'quizzes' => [
+                        'current_page' => 1,
+                        'per_page' => 0,
+                        'total' => 0,
+                        'last_page' => 1,
+                    ],
+                ],
+            ]);
         }
 
         $assignmentsPage = (int) $request->query('assignments_page', 1);
@@ -39,15 +79,20 @@ class StudentCourseworkController extends Controller
         $dueTo = $request->query('due_to');
 
         $assignmentsQuery = Assignment::query()
-            ->with(['course', 'lesson'])
+            ->with(['course:id,title', 'lesson:id,title'])
             ->whereIn('course_id', $courseIds)
-            ->where('is_published', '=', DB::raw('true'))
+            ->whereRaw('assignments.is_published is true')
             ->leftJoin('assignment_submissions as submissions', function ($join) use ($user) {
                 $join->on('assignments.id', '=', 'submissions.assignment_id')
                     ->where('submissions.user_id', $user->id);
             })
             ->select([
-                'assignments.*',
+                'assignments.id',
+                'assignments.course_id',
+                'assignments.lesson_id',
+                'assignments.title',
+                'assignments.due_at',
+                'assignments.is_published',
                 'submissions.id as submission_id',
                 'submissions.submitted_at as submission_submitted_at',
                 'submissions.graded_at as submission_graded_at',
@@ -131,10 +176,10 @@ class StudentCourseworkController extends Controller
             ->limit(1);
 
         $quizzesQuery = Quiz::query()
-            ->with(['course', 'lesson'])
+            ->with(['course:id,title', 'lesson:id,title'])
             ->whereIn('course_id', $courseIds)
-            ->where('is_published', '=', DB::raw('true'))
-            ->select('quizzes.*')
+            ->whereRaw('quizzes.is_published is true')
+            ->select(['quizzes.id', 'quizzes.course_id', 'quizzes.lesson_id', 'quizzes.title', 'quizzes.max_attempts', 'quizzes.created_at'])
             ->selectSub($attemptsUsedSub, 'attempts_used')
             ->selectSub($lastScoreSub, 'last_score')
             ->selectSub($lastAttemptedSub, 'last_attempted_at');

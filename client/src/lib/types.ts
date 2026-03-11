@@ -166,12 +166,22 @@ export type NotificationItem = {
   course_id?: number | null;
   due_at?: string | null;
   created_at?: string | null;
+  is_read?: boolean;
 };
 
 export type StudentNotifications = {
   upcoming_assignments: NotificationItem[];
   new_lessons: NotificationItem[];
   new_quizzes: NotificationItem[];
+  summary: {
+    unread_count: number;
+    total_count: number;
+  };
+};
+
+export type StudentNotificationSummary = {
+  unread_count: number;
+  total_count: number;
 };
 
 export type StudentCourseworkAssignment = {

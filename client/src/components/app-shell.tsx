@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Activity,
   BarChart3,
@@ -20,30 +20,81 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { getStudentNotificationSummary } from "@/lib/student";
+
+const NOTIFICATION_SYNC_EVENT = "atlas-notifications-updated";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
   const [theme, setTheme] = useState<"dark" | "light">(() => {
-    if (typeof window === "undefined") return "dark";
+    if (typeof window === "undefined") return "light";
     const stored = window.localStorage.getItem("atlas-theme");
-    return stored === "light" || stored === "dark" ? stored : "dark";
+    return stored === "light" || stored === "dark" ? stored : "light";
   });
-  const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    setMounted(true);
+    if (typeof window === "undefined") return;
+    document.documentElement.setAttribute("data-theme", theme);
+    window.localStorage.setItem("atlas-theme", theme);
+  }, [theme]);
+
+  const fetchNotificationSummary = useCallback(async () => {
+    const response = await getStudentNotificationSummary();
+
+    return response.data.unread_count;
   }, []);
 
   useEffect(() => {
-    if (!mounted) return;
-    document.documentElement.setAttribute("data-theme", theme);
-    window.localStorage.setItem("atlas-theme", theme);
-  }, [theme, mounted]);
+    if (user?.role !== "student") {
+      return;
+    }
+
+    let active = true;
+
+    void fetchNotificationSummary()
+      .then((count) => {
+        if (active) {
+          setUnreadCount(count);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setUnreadCount(0);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [fetchNotificationSummary, user?.role]);
 
   useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [user?.role]);
+    if (typeof window === "undefined") return;
+
+    const handleNotificationsUpdated = () => {
+      if (user?.role !== "student") {
+        return;
+      }
+
+      void fetchNotificationSummary()
+        .then((count) => {
+          setUnreadCount(count);
+        })
+        .catch(() => {
+          setUnreadCount(0);
+        });
+    };
+
+    window.addEventListener(NOTIFICATION_SYNC_EVENT, handleNotificationsUpdated);
+
+    return () => {
+      window.removeEventListener(NOTIFICATION_SYNC_EVENT, handleNotificationsUpdated);
+    };
+  }, [fetchNotificationSummary, user?.role]);
+
+  const notificationBadgeCount = user?.role === "student" ? unreadCount : 0;
 
   const navLinks = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, show: true },
@@ -79,6 +130,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link key={link.href} className="app-shell-link inline-flex items-center gap-1.5" href={link.href}>
                 <link.icon size={15} strokeWidth={2} />
                 <span>{link.label}</span>
+                {link.href === "/student/notifications" && notificationBadgeCount > 0 ? (
+                  <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--brand)] px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                    {notificationBadgeCount > 99 ? "99+" : notificationBadgeCount}
+                  </span>
+                ) : null}
               </Link>
             ))}
             {user?.role === "instructor" || user?.role === "admin" ? (
@@ -86,16 +142,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 Instructor view
               </span>
             ) : null}
-            {mounted ? (
-              <button
-                className="app-shell-pill rounded-full px-3 py-1 text-[11px] inline-flex items-center gap-1.5"
-                type="button"
-                onClick={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
-              >
-                {theme === "dark" ? <Sun size={13} /> : <Moon size={13} />}
-                {theme === "dark" ? "Light theme" : "Dark theme"}
-              </button>
-            ) : null}
+            <button
+              className="app-shell-pill rounded-full px-3 py-1 text-[11px] inline-flex items-center gap-1.5"
+              type="button"
+              onClick={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
+            >
+              {theme === "dark" ? <Sun size={13} /> : <Moon size={13} />}
+              {theme === "dark" ? "Light theme" : "Dark theme"}
+            </button>
             {loading ? (
               <span className="app-shell-link">Checking...</span>
             ) : user ? (
@@ -116,16 +170,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="flex items-center gap-2 md:hidden">
-            {mounted ? (
-              <button
-                className="app-shell-pill rounded-full px-3 py-1.5 text-[11px] inline-flex items-center gap-1"
-                type="button"
-                onClick={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
-              >
-                {theme === "dark" ? <Sun size={13} /> : <Moon size={13} />}
-                {theme === "dark" ? "Light" : "Dark"}
-              </button>
-            ) : null}
+            <button
+              className="app-shell-pill rounded-full px-3 py-1.5 text-[11px] inline-flex items-center gap-1"
+              type="button"
+              onClick={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
+            >
+              {theme === "dark" ? <Sun size={13} /> : <Moon size={13} />}
+              {theme === "dark" ? "Light" : "Dark"}
+            </button>
             <button
               className="app-shell-pill rounded-full px-3 py-1.5 text-xs inline-flex items-center gap-1"
               type="button"
@@ -151,6 +203,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 >
                   <link.icon size={16} strokeWidth={2} />
                   {link.label}
+                  {link.href === "/student/notifications" && notificationBadgeCount > 0 ? (
+                    <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--brand)] px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                      {notificationBadgeCount > 99 ? "99+" : notificationBadgeCount}
+                    </span>
+                  ) : null}
                 </Link>
               ))}
 

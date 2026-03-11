@@ -92,6 +92,8 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/student/dashboard/overview', [StudentDashboardController::class, 'overview']);
         Route::get('/student/notifications', [NotificationController::class, 'index']);
+        Route::get('/student/notifications/summary', [NotificationController::class, 'summary']);
+        Route::post('/student/notifications/read', [NotificationController::class, 'markRead']);
         Route::get('/student/coursework', [StudentCourseworkController::class, 'index']);
         Route::get('/student/activity', [StudentActivityController::class, 'index']);
         Route::get('/student/courses/{course}/dashboard', [StudentCourseDashboardController::class, 'show']);
