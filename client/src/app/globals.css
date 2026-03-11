@@ -124,6 +124,51 @@ h3 {
   color: var(--logo-fg);
 }
 
+.app-shell-search {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  width: min(100%, 28rem);
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  border-radius: 999px;
+  padding: 0.55rem 0.7rem 0.55rem 0.95rem;
+}
+
+.app-shell-search:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--border));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.app-shell-search-btn {
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.45rem 0.9rem;
+}
+
+.app-shell-search-btn:hover {
+  background: var(--accent-strong);
+}
+
+.app-shell-search-clear {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.35rem;
+}
+
+.app-shell-search-clear:hover {
+  color: var(--foreground);
+}
+
 .bg-blob-1 {
   background: var(--blob-1);
 }

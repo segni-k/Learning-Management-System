@@ -11,6 +11,7 @@ use App\Models\Quiz;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class NotificationController extends Controller
 {
@@ -63,6 +64,12 @@ class NotificationController extends Controller
 
         if (! $user?->isStudent() && ! $user?->isAdmin()) {
             abort(403, 'Students only.');
+        }
+
+        if (! Schema::hasTable('notification_reads')) {
+            return response()->json([
+                'message' => 'Notification reads table is not available yet.',
+            ], 202);
         }
 
         $data = $request->validate([
@@ -136,7 +143,7 @@ class NotificationController extends Controller
 
     private function readNotificationKeys(int $userId, Collection $notifications): Collection
     {
-        if ($notifications->isEmpty()) {
+        if ($notifications->isEmpty() || ! Schema::hasTable('notification_reads')) {
             return collect();
         }
 

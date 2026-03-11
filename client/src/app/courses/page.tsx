@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { RequireAuth } from "@/components/require-auth";
 import { listCourses } from "@/lib/courses";
@@ -15,6 +16,7 @@ import type { Course, Enrollment } from "@/lib/types";
 
 export default function CoursesPage() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const [courses, setCourses] = useState<Course[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [status, setStatus] = useState<string | null>(null);
@@ -43,6 +45,23 @@ export default function CoursesPage() {
     return map;
   }, [enrollments]);
 
+  const searchQuery = searchParams.get("search")?.trim().toLowerCase() ?? "";
+
+  const filteredCourses = useMemo(() => {
+    if (!searchQuery) {
+      return courses;
+    }
+
+    return courses.filter((course) => {
+      const haystack = [course.title, course.description, course.level, course.instructor?.name]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(searchQuery);
+    });
+  }, [courses, searchQuery]);
+
   const handleEnroll = async (courseId: number) => {
     setStatus(null);
     setEnrollingId(courseId);
@@ -63,7 +82,9 @@ export default function CoursesPage() {
         <header className="space-y-2">
           <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Courses</p>
           <h1 className="text-2xl font-semibold sm:text-3xl">Browse courses</h1>
-          <p className="text-sm text-slate-400">Find a course and enroll instantly.</p>
+          <p className="text-sm text-slate-400">
+            {searchQuery ? `Showing results for "${searchParams.get("search")}".` : "Find a course and enroll instantly."}
+          </p>
           <Link className="text-xs text-amber-300" href="/dashboard">
             Back to dashboard
           </Link>
@@ -73,7 +94,7 @@ export default function CoursesPage() {
 
         <Panel>
           <div className="grid gap-4 md:grid-cols-2">
-            {courses.map((course) => {
+            {filteredCourses.map((course) => {
               const enrollment = enrollmentMap.get(course.id);
               const isEnrolled = Boolean(enrollment);
               const thumbnail = course.thumbnail_path || "/images/courses/default.svg";
@@ -124,9 +145,11 @@ export default function CoursesPage() {
                 </Card>
               );
             })}
-            {!courses.length && (
+            {!filteredCourses.length && (
               <p className="text-sm text-slate-400">
-                No published courses yet. Seed the database or create courses as an instructor.
+                {searchQuery
+                  ? "No courses matched your search. Try a different keyword."
+                  : "No published courses yet. Seed the database or create courses as an instructor."}
               </p>
             )}
           </div>
