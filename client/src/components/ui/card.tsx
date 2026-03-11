@@ -7,10 +7,8 @@ type CardProps = {
 
 export function Card({ className, children, ...props }: CardProps) {
   const classes = [
+    "ui-card",
     "rounded-xl",
-    "border",
-    "border-slate-800/80",
-    "bg-slate-950/70",
     "p-4",
     className,
   ]
